@@ -1,0 +1,25 @@
+# Dependencies
+**/node_modules/
+
+# Environment
+**/.env
+**/.env.*
+!**/.env.example
+
+# Build
+**/dist/
+**/build/
+**/.next/
+
+# Database dumps & backups (حجیم)
+*.sql
+*.zip
+*.bak
+
+# Logs
+*.log
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
