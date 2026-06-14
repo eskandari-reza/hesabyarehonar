@@ -117,7 +117,7 @@ export function Sidebar() {
                       className={clsx(
                         "w-full text-right px-3 py-2 text-sm rounded-lg transition-colors",
                         active === child.id
-                          ? "bg-gradient-to-l from-primary-600 to-accent-500 text-white shadow-card"
+                          ? "bg-linear-to-l from-primary-600 to-accent-500 text-white shadow-card"
                           : "text-primary-900/70 hover:text-primary-700 hover:bg-primary-50"
                       )}
                     >
