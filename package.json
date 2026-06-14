@@ -1,0 +1,14 @@
+{
+  "name": "hesabyar-honar",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm --filter frontend dev",
+    "dev:api": "pnpm --filter backend start:dev",
+    "dev": "pnpm -r --parallel run dev",
+    "build": "pnpm -r run build"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+ 
+}
