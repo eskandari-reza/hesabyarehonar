@@ -53,7 +53,7 @@ body {
   .btn-primary {
     @apply text-white px-5 py-2.5 rounded-xl font-medium
            transition-all shadow-card hover:shadow-hover
-           bg-gradient-to-l from-primary-600 to-accent-500
+           bg-linear-to-l from-primary-600 to-accent-500
            hover:-translate-y-0.5 active:translate-y-0;
   }
 
@@ -91,7 +91,7 @@ body {
 
   /* متن گرادیانی برای تیترها */
   .text-gradient {
-    @apply bg-gradient-to-l from-primary-700 to-accent-500
+    @apply bg-linear-to-l from-primary-700 to-accent-500
            bg-clip-text text-transparent;
   }
 }
