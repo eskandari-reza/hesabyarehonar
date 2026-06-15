@@ -11,8 +11,6 @@ interface DomainSwitcherProps {
 export function DomainSwitcher({ domains }: DomainSwitcherProps) {
   const pathname = usePathname();
   const activeDomainId = pathname.split("/")[1] || null;
-  console.log("activeDomainId:", activeDomainId);
-
 
   return (
     <div className="flex gap-2">
