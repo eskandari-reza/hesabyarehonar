@@ -1,56 +1,77 @@
 "use client";
 
-import { useState } from "react";
-import { domains, defaultDomainId } from "@/config/navigation";
-import { Sidebar } from "@/components/ui/Sidebar";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { switcherDomains, homeDomain } from "@/config/navigation";
 import { DomainSwitcher } from "@/components/ui/DomainSwitcher";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
-  const [activeDomainId, setActiveDomainId] = useState(defaultDomainId);
+  const pathname = usePathname();
+  const activeDomainId = pathname.split("/")[1] || null;
+
+  const activeDomain =
+    switcherDomains.find((d) => d.id === activeDomainId) ?? null;
+
+  const isHome = activeDomain?.id === homeDomain.id;
 
   return (
-    <div dir="rtl" className="flex h-screen flex-col">
-      <header className="sticky top-0 z-30 bg-linear-to-l from-primary-600 via-primary-500 to-accent-500 px-6 py-4 shadow-card">
-        <div className="flex items-center justify-between gap-4">
+    <div className="flex h-screen flex-col">
+      <header className="flex items-center border-b px-4 py-3">
+        <div className="flex-1 flex justify-start">
+          {/* <Logo /> */}
+        </div>
 
-          {/* راست: لوگوی سیستم */}
-          <div className="flex flex-1 items-center justify-start gap-3">
-            <span className="text-2xl">🎨</span>
-            <h1 className="text-xl font-bold text-white">حسابیار هنر</h1>
-            <span className="flex items-center gap-1 rounded-full bg-white/95 px-4 py-1.5 text-sm font-bold text-primary-700 shadow-card">
-              ✨ مدیریت هنری
-            </span>
-          </div>
+        <div className="flex-1 flex justify-center">
+          <DomainSwitcher domains={switcherDomains} />
+        </div>
 
-          {/* وسط: سوییچرهای دامنه */}
-          <div className="flex flex-1 items-center justify-center">
-            <DomainSwitcher
-              domains={domains}
-              activeDomainId={activeDomainId}
-              onDomainChange={setActiveDomainId}
-            />
-          </div>
-
-          {/* چپ: آیتم‌های ناوبری + پروفایل */}
-          <div className="flex flex-1 items-center justify-end gap-3">
-            <span className="flex items-center gap-2 rounded-full bg-white/95 px-4 py-2 text-sm font-bold text-emerald-600 shadow-card">
-              ✅ ۱۲ فاکتور
-            </span>
-            <span className="flex items-center gap-2 rounded-full bg-white/95 px-4 py-2 text-sm font-bold text-primary-700 shadow-card">
-              📚 ۳۴۰ محصول
-            </span>
-            {/* عکس پروفایل */}
-            <div className="h-9 w-9 overflow-hidden rounded-full border-2 border-white/80 bg-white/20">
-              <img src="/avatar.png" alt="پروفایل" className="h-full w-full object-cover" />
-            </div>
-          </div>
-
+        <div className="flex-1 flex justify-end">
+          {/* <Profile /> */}
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden" dir="rtl">
-        <Sidebar domains={domains} activeDomainId={activeDomainId} />
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+      <div className="flex flex-1 overflow-hidden">
+        {activeDomain && (
+          <aside className="w-64 border-l overflow-y-auto p-4 flex flex-col">
+            <nav className="space-y-1 flex-1">
+              {activeDomain.items.map((item) => {
+                const Icon = item.icon;
+                // در دامنه home لینک‌ها مستقیم به ریشه‌ی مسیر می‌روند،
+                // در غیر این صورت به صورت /<domain>/<item> ساخته می‌شوند.
+                const href = isHome
+                  ? `/${item.id}`
+                  : `/${activeDomain.id}/${item.id}`;
+
+                const isActive =
+                  pathname === href || pathname.startsWith(`${href}/`);
+
+                return (
+                  <Link
+                    key={item.id}
+                    href={href}
+                    className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${
+                      isActive
+                        ? "bg-primary-100 text-primary-700"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.title}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* بخش پروفایل کاربر فقط در دامنه‌ی home نمایش داده می‌شود */}
+            {isHome && (
+              <div className="mt-4 border-t pt-4">
+                {/* <UserProfile /> */}
+              </div>
+            )}
+          </aside>
+        )}
+
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
   );

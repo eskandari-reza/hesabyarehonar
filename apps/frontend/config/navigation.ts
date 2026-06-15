@@ -1,8 +1,9 @@
+import { profile } from "console";
 import {
   Settings, FileText, Receipt, Building2, Calculator,
   Warehouse, Landmark, ShoppingCart, Tag, Store,
   LayoutDashboard, Package, Users, Megaphone,
-  ServerCog, BarChart3, HelpCircle,
+  ServerCog, BarChart3, HelpCircle,Home,
   type LucideIcon,
 } from "lucide-react";
 
@@ -19,6 +20,11 @@ export interface Domain {
   icon: LucideIcon;
   items: NavItem[];
 }
+// آیتم‌های سایدبار صفحه home: دامنه‌های اختصاصی کاربر
+const homeItems: NavItem[] = [
+  { id: "userprofile", title: "پروفایل کابری", icon: Store, children: [] },
+  { id: "usersettings",      title: "تنظیمات",  icon: Store,      children: [] },
+];
 
 const accountingItems: NavItem[] = [
   { id: "system",      title: "سیستم",         icon: Settings,     children: [] },
@@ -47,6 +53,12 @@ const storeItems: NavItem[] = [
 ];
 
 export const domains: Domain[] = [
+    {
+    id: "home",
+    title: "خانه",
+    icon: Home,
+    items: homeItems,
+  },
   {
     id: "accounting",
     title: "حسابداری",
@@ -61,4 +73,6 @@ export const domains: Domain[] = [
   },
 ];
 
-export const defaultDomainId = "accounting";
+export const defaultDomainId = "home";
+export const homeDomain = domains.find((d) => d.id === "home")!;
+export const switcherDomains = domains;
