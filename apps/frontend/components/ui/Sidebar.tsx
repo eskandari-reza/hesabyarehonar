@@ -50,8 +50,10 @@ export function Sidebar({ domains, activeDomainId, onAction }: SidebarProps) {
       <div key={item.id}>
         <button
           onClick={() => handleClick(item)}
-          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-100 ${
-            isActive ? "bg-gray-100 font-medium text-blue-600" : ""
+          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors text-sidebar-foreground hover:bg-sidebar-hover ${
+            isActive
+              ? "bg-sidebar-active text-sidebar-active-foreground font-medium hover:bg-sidebar-active"
+              : ""
           }`}
           style={{ paddingRight: `${depth * 1 + 0.75}rem` }}
         >
@@ -80,7 +82,7 @@ export function Sidebar({ domains, activeDomainId, onAction }: SidebarProps) {
   if (!activeDomain) return null;
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-l bg-gray-50">
+    <aside className="flex h-screen w-64 flex-col border-l border-border bg-sidebar text-sidebar-foreground">
       <nav className="flex-1 min-h-0 space-y-1 overflow-y-auto p-4">
         {activeDomain.items.map((item) => renderNavItem(item))}
       </nav>

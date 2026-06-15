@@ -1,97 +1,337 @@
 @import "tailwindcss";
 
+/* ---------- متغیرهای پایه (تم پیش‌فرض / dark) ---------- */
 :root {
-  --background: #faf5ff;   /* بنفش خیلی روشن */
-  --foreground: #1e1b2e;
+  --background: #0b1120;
+  --foreground: #f8fafc;
+
+  --card: #161f33;
+  --card-foreground: #f8fafc;
+
+  --border: #2a3650;
+  --input: #1a2438;
+  --input-border: #3b4a68;
+
+  --primary: #a78bfa;
+  --primary-foreground: #1a1033;
+  --primary-hover: #c4b5fd;
+
+  --secondary: #2a3650;
+  --secondary-foreground: #f1f5f9;
+  --secondary-hover: #36456a;
+
+  --sidebar: #111a2e;
+  --sidebar-foreground: #e2e8f0;
+  --sidebar-active: #a78bfa;
+  --sidebar-active-foreground: #1a1033;
+  --sidebar-hover: #1f2b45;
+
+  --muted: #1a2438;
+  --muted-foreground: #a9b6cc;
+
+  --bg-gradient: linear-gradient(135deg, #0b1120 0%, #111a2e 50%, #0b1120 100%);
+  --switch-track-off: #334155;
+  --switch-track-on:  var(--primary);
+  --switch-thumb:     #f8fafc;
 }
 
-@theme {
-  /* پالت اصلی: بنفش هنری */
-  --color-primary-50: #faf5ff;
-  --color-primary-100: #f3e8ff;
-  --color-primary-200: #e9d5ff;
-  --color-primary-300: #d8b4fe;
-  --color-primary-400: #c084fc;
-  --color-primary-500: #a855f7;
-  --color-primary-600: #9333ea;
-  --color-primary-700: #7c3aed;
-  --color-primary-800: #6b21a8;
-  --color-primary-900: #581c87;
+/* ---------- تم تیره (بازطراحی‌شده) ---------- */
+[data-theme="dark"] {
+  --background: #0b1120;
+  --foreground: #f8fafc;
 
-  /* مکمل: صورتی */
-  --color-accent-400: #f472b6;
-  --color-accent-500: #ec4899;
-  --color-accent-600: #db2777;
+  --card: #161f33;
+  --card-foreground: #f8fafc;
 
-  /* مکمل: فیروزه‌ای */
-  --color-teal-400: #22d3ee;
-  --color-teal-500: #06b6d4;
-  --color-teal-600: #0891b2;
+  --border: #2a3650;
+  --input: #1a2438;
+  --input-border: #3b4a68;
 
+  --primary: #a78bfa;
+  --primary-foreground: #1a1033;
+  --primary-hover: #c4b5fd;
+
+  --secondary: #2a3650;
+  --secondary-foreground: #f1f5f9;
+  --secondary-hover: #36456a;
+
+  --sidebar: #111a2e;
+  --sidebar-foreground: #e2e8f0;
+  --sidebar-active: #a78bfa;
+  --sidebar-active-foreground: #1a1033;
+  --sidebar-hover: #1f2b45;
+
+  --muted: #1a2438;
+  --muted-foreground: #a9b6cc;
+
+  --bg-gradient: linear-gradient(135deg, #0b1120 0%, #111a2e 50%, #0b1120 100%);
+  --switch-track-off: #334155;
+  --switch-track-on:  var(--primary);
+  --switch-thumb:     #f8fafc;
+}
+
+/* ---------- تم آبی (نیمه‌تاریک) ---------- */
+[data-theme="blue"] {
+  --background: #dce8f7;
+  --foreground: #0f2747;
+
+  --card: #ffffff;
+  --card-foreground: #0f2747;
+
+  --border: #b6cdee;
+  --input: #ffffff;
+  --input-border: #a3c0e8;
+
+  --primary: #1d6fff;
+  --primary-foreground: #ffffff;
+  --primary-hover: #0b5cf0;
+
+  --secondary: #cfdef2;
+  --secondary-foreground: #0f2747;
+  --secondary-hover: #bdd1ec;
+
+  --sidebar: #f4f8fd;
+  --sidebar-foreground: #334155;
+  --sidebar-active: #1d6fff;
+  --sidebar-active-foreground: #ffffff;
+  --sidebar-hover: #cfe2ff;
+
+  --muted: #dce8f7;
+  --muted-foreground: #4a648c;
+
+  --bg-gradient: linear-gradient(135deg, #d2e2f5 0%, #c2d6ef 50%, #d2e2f5 100%);
+  --switch-track-off: #1e3a5f;
+  --switch-track-on:  var(--primary);
+  --switch-thumb:     #f0f9ff;
+}
+
+/* ---------- تم سبز (نیمه‌تاریک) ---------- */
+[data-theme="green"] {
+  --background: #d7efe0;
+  --foreground: #0f3320;
+
+  --card: #ffffff;
+  --card-foreground: #0f3320;
+
+  --border: #b2dcc1;
+  --input: #ffffff;
+  --input-border: #9fd3b1;
+
+  --primary: #00b34a;
+  --primary-foreground: #ffffff;
+  --primary-hover: #009a3f;
+
+  --secondary: #c9e8d4;
+  --secondary-foreground: #0f3320;
+  --secondary-hover: #b8e0c6;
+
+  --sidebar: #f1faf4;
+  --sidebar-foreground: #334155;
+  --sidebar-active: #00b34a;
+  --sidebar-active-foreground: #ffffff;
+  --sidebar-hover: #ccf5db;
+
+  --muted: #d7efe0;
+  --muted-foreground: #3f664f;
+
+  --bg-gradient: linear-gradient(135deg, #cdead7 0%, #bbe1c9 50%, #cdead7 100%);
+  --switch-track-off: #14432a;
+  --switch-track-on:  var(--primary);
+  --switch-thumb:     #f0fdf4;
+}
+
+/* تم روشن فقط با data-theme صریح */
+[data-theme="light"] {
+    --background: #e2e8f0;
+  --foreground: #0f172a;
+
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+
+  --border: #cbd5e1;
+  --input: #ffffff;
+  --input-border: #b8c4d4;
+
+  --secondary: #d8e0ea;
+  --secondary-foreground: #0f172a;
+  --secondary-hover: #c8d3e0;
+
+  --sidebar: #f1f5f9;
+  --sidebar-foreground: #334155;
+  --sidebar-hover: #e2e8f0;
+
+  --muted: #e2e8f0;
+  --muted-foreground: #5a6b82;
+
+  --bg-gradient: linear-gradient(135deg, #d8e0ea 0%, #c8d3e0 50%, #d8e0ea 100%);
+  --switch-track-off: #cbd5e1;
+  --switch-track-on:  var(--primary);
+  --switch-thumb:     #ffffff;
+}
+
+/* ---------- تم صورتی (نیمه‌تاریک) ---------- */
+[data-theme="pink"] {
+  --background: #fbdcec;
+  --foreground: #831843;
+
+  --card: #ffffff;
+  --card-foreground: #831843;
+
+  --border: #f7b8d3;
+  --input: #ffffff;
+  --input-border: #f4a3c6;
+
+  --primary: #f01f8b;
+  --primary-foreground: #ffffff;
+  --primary-hover: #d80e78;
+
+  --secondary: #f8d2e4;
+  --secondary-foreground: #831843;
+  --secondary-hover: #f5bed7;
+
+  --sidebar: #fef2f8;
+  --sidebar-foreground: #475569;
+  --sidebar-active: #f01f8b;
+  --sidebar-active-foreground: #ffffff;
+  --sidebar-hover: #ffd6e8;
+
+  --muted: #fbdcec;
+  --muted-foreground: #8c4d6e;
+
+  --bg-gradient: linear-gradient(135deg, #f9d2e4 0%, #f5c0d8 50%, #f9d2e4 100%);
+  --switch-track-off: #4a1d3d;
+  --switch-track-on:  var(--primary);
+  --switch-thumb:     #fdf2f8;
+}
+
+/* ---------- تم بنفش (نیمه‌تاریک) ---------- */
+[data-theme="purple"] {
+  --background: #ecddfb;
+  --foreground: #581c87;
+
+  --card: #ffffff;
+  --card-foreground: #581c87;
+
+  --border: #d8b4fe;
+  --input: #ffffff;
+  --input-border: #c9a0fc;
+
+  --primary: #a21cff;
+  --primary-foreground: #ffffff;
+  --primary-hover: #8f0ff0;
+
+  --secondary: #e4d0fa;
+  --secondary-foreground: #581c87;
+  --secondary-hover: #d8bdf7;
+
+  --sidebar: #f8f2ff;
+  --sidebar-foreground: #475569;
+  --sidebar-active: #a21cff;
+  --sidebar-active-foreground: #ffffff;
+  --sidebar-hover: #efddff;
+
+  --muted: #ecddfb;
+  --muted-foreground: #7d5598;
+
+  --bg-gradient: linear-gradient(135deg, #e4d0fa 0%, #d7bdf7 50%, #e4d0fa 100%);
+  --switch-track-off: #2e1d4a;
+  --switch-track-on:  var(--primary);
+  --switch-thumb:     #faf5ff;
+}
+
+
+/* ---------- اتصال متغیرها به Tailwind ---------- */
+@theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
-  --font-sans: "Vazirmatn", sans-serif;
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
 
-  /* سایه‌های سفارشی (با ته‌رنگ بنفش) */
-  --shadow-card: 0 1px 3px rgba(124, 58, 237, 0.08);
-  --shadow-hover: 0 8px 24px rgba(124, 58, 237, 0.18);
-  --shadow-glow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-border: var(--input-border);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-hover: var(--secondary-hover);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-active-foreground: var(--sidebar-active-foreground);
+  --color-sidebar-hover: var(--sidebar-hover);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-switch-track-off: var(--switch-track-off);
+  --color-switch-track-on:  var(--switch-track-on);
+  --color-switch-thumb:     var(--switch-thumb);
 }
 
+/* ---------- پایه ---------- */
 body {
-  background: linear-gradient(180deg, #faf5ff 0%, #fdf4ff 100%);
-  color: #1e1b2e;
+  background: var(--bg-gradient);
+  color: var(--foreground);
   direction: rtl;
   min-height: 100vh;
   --font-sans: var(--font-vazirmatn), sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* کلاس‌های کمکی برای کامپوننت‌ها */
-@layer components {
-  /* دکمه اصلی - گرادیان بنفش به صورتی */
-  .btn-primary {
-    @apply text-white px-5 py-2.5 rounded-xl font-medium
-           transition-all shadow-card hover:shadow-hover
-           bg-linear-to-l from-primary-600 to-accent-500
-           hover:-translate-y-0.5 active:translate-y-0;
-  }
+/* ---------- دکمه‌ها ---------- */
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
 
-  /* دکمه ثانویه */
-  .btn-secondary {
-    @apply bg-white border border-primary-200 text-primary-700
-           px-5 py-2.5 rounded-xl font-medium
-           hover:bg-primary-50 hover:border-primary-300 transition-all;
-  }
+.btn-secondary {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease;
+  cursor: pointer;
+}
+.btn-secondary:hover {
+  background-color: var(--secondary-hover);
+}
 
-  /* اینپوت */
-  .input-field {
-    @apply w-full bg-white border border-primary-200
-           rounded-xl px-3.5 py-2.5 text-sm
-           focus:outline-none focus:ring-2
-           focus:ring-primary-400/30 focus:border-primary-500
-           transition-all;
-  }
+/* ---------- اینپوت‌ها ---------- */
+.input {
+  background-color: var(--input);
+  color: var(--foreground);
+  border: 1px solid var(--input-border);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  width: 100%;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+}
 
-  /* لیبل */
-  .label-field {
-    @apply block text-sm font-medium text-primary-900 mb-1.5;
-  }
-
-  /* کارت پایه */
-  .card {
-    @apply bg-white rounded-2xl shadow-card border border-primary-100;
-  }
-
-  /* کارت با افکت هاور */
-  .card-hover {
-    @apply bg-white rounded-2xl shadow-card border border-primary-100
-           transition-all hover:shadow-hover hover:-translate-y-1;
-  }
-
-  /* متن گرادیانی برای تیترها */
-  .text-gradient {
-    @apply bg-linear-to-l from-primary-700 to-accent-500
-           bg-clip-text text-transparent;
-  }
+/* ---------- کارت ---------- */
+.card {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
