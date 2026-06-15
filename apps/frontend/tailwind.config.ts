@@ -43,6 +43,7 @@ const config: Config = {
         card: "0 1px 3px rgba(0,0,0,0.08)",
         hover: "0 4px 12px rgba(0,0,0,0.1)",
       },
+      spacing: { '4.5': '1.125rem' },
     },
   },
   plugins: [],

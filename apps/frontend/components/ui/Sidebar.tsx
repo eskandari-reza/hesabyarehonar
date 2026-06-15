@@ -1,135 +1,68 @@
 "use client";
+
+import { ChevronDown, ChevronLeft } from "lucide-react";
 import { useState } from "react";
-import {
-  ChevronDown, ChevronLeft,
-  Settings, Calculator, Landmark,
-  Warehouse, ShoppingCart, Tag,
-  type LucideIcon,
-} from "lucide-react";
-import clsx from "clsx";
+import type { Domain, NavItem } from "@/config/navigation";
 
-type MenuChild = {
-  id: string;
-  label: string;
-};
+interface SidebarProps {
+  domains: Domain[];
+  activeDomainId: string;
+}
 
-type MenuItem = {
-  id: string;
-  label: string;
-  icon: LucideIcon;
-  color: string;
-  children: MenuChild[];
-};
+export function Sidebar({ domains, activeDomainId }: SidebarProps) {
+  const [openItems, setOpenItems] = useState<string[]>([]);
 
-const MENU_ITEMS: MenuItem[] = [
-  {
-    id: "system",
-    label: "سیستم",
-    icon: Settings,
-    color: "text-teal-500",
-    children: [],
-  },
-  {
-    id: "accounting",
-    label: "حسابداری",
-    icon: Calculator,
-    color: "text-accent-500",
-    children: [],
-  },
-  {
-    id: "treasury",
-    label: "خزانه‌داری",
-    icon: Landmark,
-    color: "text-primary-600",
-    children: [],
-  },
-  {
-    id: "warehouse",
-    label: "مدیریت انبار",
-    icon: Warehouse,
-    color: "text-amber-500",
-    children: [],
-  },
-  {
-    id: "purchase",
-    label: "خرید",
-    icon: ShoppingCart,
-    color: "text-success-500",
-    children: [],
-  },
-  {
-    id: "sales",
-    label: "فروش",
-    icon: Tag,
-    color: "text-rose-500",
-    children: [],
-  },
-];
+  const activeDomain = domains.find((d) => d.id === activeDomainId);
 
-export function Sidebar() {
-  const [expanded, setExpanded] = useState<string[]>(["system"]);
-  const [active, setActive] = useState<string>("");
-
-  const toggle = (id: string) => {
-    setExpanded((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+  const toggleItem = (id: string) => {
+    setOpenItems((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
 
-  return (
-    <aside className="w-64 card p-0 h-full overflow-y-auto">
-      <nav className="p-3 space-y-1">
-        {MENU_ITEMS.map((item) => {
-          const Icon = item.icon;
-          const isExpanded = expanded.includes(item.id);
-          const hasChildren = item.children.length > 0;
+  const renderNavItem = (item: NavItem, depth = 0) => {
+    const isOpen = openItems.includes(item.id);
+    const hasChildren = item.children && item.children.length > 0;
+    const Icon = item.icon;
 
-          return (
-            <div key={item.id}>
-              {/* آیتم اصلی */}
-              <button
-                onClick={() => hasChildren && toggle(item.id)}
-                className={clsx(
-                  "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl",
-                  "transition-colors text-right font-medium",
-                  isExpanded
-                    ? "bg-primary-50 text-primary-800"
-                    : "hover:bg-primary-50/60 text-primary-900"
-                )}
-              >
-                <Icon size={18} className={item.color} />
-                <span className="flex-1 text-sm">{item.label}</span>
-                {hasChildren &&
-                  (isExpanded ? (
-                    <ChevronDown size={16} className="text-primary-400" />
-                  ) : (
-                    <ChevronLeft size={16} className="text-primary-400" />
-                  ))}
-              </button>
-
-              {/* زیرمنوها */}
-              {isExpanded && hasChildren && (
-                <div className="mr-7 mt-1 space-y-0.5 border-r-2 border-primary-100 pr-2">
-                  {item.children.map((child) => (
-                    <button
-                      key={child.id}
-                      onClick={() => setActive(child.id)}
-                      className={clsx(
-                        "w-full text-right px-3 py-2 text-sm rounded-lg transition-colors",
-                        active === child.id
-                          ? "bg-linear-to-l from-primary-600 to-accent-500 text-white shadow-card"
-                          : "text-primary-900/70 hover:text-primary-700 hover:bg-primary-50"
-                      )}
-                    >
-                      {child.label}
-                    </button>
-                  ))}
-                </div>
+    return (
+      <div key={item.id}>
+        <button
+          onClick={() => hasChildren && toggleItem(item.id)}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-100"
+          style={{ paddingRight: `${depth * 1 + 0.75}rem` }}
+        >
+          <Icon className="h-4 w-4 shrink-0" />
+          <span className="flex-1 text-right">{item.title}</span>
+          {hasChildren && (
+            <div className="shrink-0">
+              {isOpen ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
               )}
             </div>
-          );
-        })}
+          )}
+        </button>
+
+        {hasChildren && isOpen && (
+          <div className="mt-1">
+            {item.children!.map((child) => renderNavItem(child, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  if (!activeDomain) return null;
+
+  return (
+    <aside className="w-64 border-l bg-gray-50 p-4">
+      <nav className="space-y-1">
+        {activeDomain.items.map((item) => renderNavItem(item))}
       </nav>
     </aside>
   );
 }
+
+export default Sidebar;
