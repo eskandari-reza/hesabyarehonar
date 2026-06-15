@@ -9,6 +9,9 @@ import {
   Banknote, Layers, Map, Building, Upload, Ruler,
   TrendingUp, TrendingDown, ClipboardList,
   FilePlus, ListChecks, Settings2, BookOpen, Table2, Tags, DoorOpen, Network,
+  ArrowLeftRight, FileMinus, ClipboardCheck, RotateCcw,
+  PackageOpen, Search, Grid3x3, LayoutGrid,
+  Activity, ArrowRightLeft, AlertTriangle, Ban,
   type LucideIcon,
 } from "lucide-react";
 
@@ -231,13 +234,46 @@ const accountingMenu: NavItem = {
   ],
 };
 
+const inventoryMenu: NavItem = {
+  id: "inventory",
+  title: "مدیریت انبار",
+  icon: Warehouse,
+  children: [
+    { id: "inv-transfer", title: "انتقال بین انبارها", icon: ArrowLeftRight, href: "/inventory/transfer", children: [] },
+    { id: "inv-consumption", title: "حواله مصرف و ضایعات و فقدان", icon: FileMinus, href: "/inventory/consumption", children: [] },
+    { id: "inv-count", title: "شمارش انبار", icon: ClipboardCheck, href: "/inventory/count", children: [] },
+    { id: "inv-stocktaking", title: "انبارگردانی", icon: RotateCcw, href: "/inventory/stocktaking", children: [] },
+    { id: "inv-label-print", title: "چاپ لیبل", icon: Printer, href: "/inventory/label-print", children: [] },
+    { id: "inv-opening", title: "موجودی اول دوره انبار", icon: PackageOpen, href: "/inventory/opening-stock", children: [] },
+    { id: "inv-search-slips", title: "جستجو در برگه‌های انبار", icon: Search, href: "/inventory/search-slips", children: [] },
+    {
+      id: "inv-reports",
+      title: "گزارشات",
+      icon: BarChart3,
+      children: [
+        { id: "rep-stock-balances", title: "گزارش موجودی‌های انبار", icon: Boxes, href: "/inventory/reports/stock-balances", children: [] },
+        { id: "rep-item-card", title: "کارت کالا", icon: CreditCard, href: "/inventory/reports/item-card", children: [] },
+        { id: "rep-matrix-items", title: "ماتریس کالاها و انبارها", icon: Grid3x3, href: "/inventory/reports/matrix-items", children: [] },
+        { id: "rep-matrix-optic", title: "ماتریس موجودی اپتیک", icon: LayoutGrid, href: "/inventory/reports/matrix-optic", children: [] },
+        { id: "rep-stock-inquiry", title: "استعلام موجودی", icon: HelpCircle, href: "/inventory/reports/stock-inquiry", children: [] },
+        { id: "rep-turnover", title: "گزارش گردش انبار", icon: Activity, href: "/inventory/reports/turnover", children: [] },
+        { id: "rep-consumption", title: "گزارش مصرف و ضایعات و فقدان", icon: TrendingDown, href: "/inventory/reports/consumption", children: [] },
+        { id: "rep-transfers", title: "گزارش نقل و انتقال بین انبارها", icon: ArrowRightLeft, href: "/inventory/reports/transfers", children: [] },
+        { id: "rep-below-reorder", title: "گزارش کالاهای زیر نقطه سفارش", icon: AlertTriangle, href: "/inventory/reports/below-reorder", children: [] },
+        { id: "rep-no-transaction", title: "گزارش کالاهای بدون تراکنش", icon: Ban, href: "/inventory/reports/no-transaction", children: [] },
+      ],
+    },
+    { id: "inv-import-opening", title: "ایمپورت اول دوره انبار", icon: Upload , href: "/inventory/import-opening", children: [] },
+  ],
+};
+
 const accountingItems: NavItem[] = [
   systemMenu,
   definitionsMenu,
   taxMenu,
   assetsMenu,
   accountingMenu,
-  { id: "warehouse", title: "مدیریت انبار", icon: Warehouse, children: [] },
+  inventoryMenu,
   { id: "treasury", title: "خزانه‌داری", icon: Landmark, children: [] },
   { id: "purchase", title: "خرید", icon: ShoppingCart, children: [] },
   { id: "sales", title: "فروش", icon: Tag, children: [] },
