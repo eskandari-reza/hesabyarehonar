@@ -5,6 +5,10 @@ import {
   ServerCog, BarChart3, HelpCircle, Home,
   DatabaseBackup, Database, Calendar, FileX, Trash2,
   PhoneIncoming, MessageSquare, List, Printer, Info,
+  Boxes, Wallet, CreditCard, Coins, UserCog, BadgePercent,
+  Banknote, Layers, Map, Building, Upload, Ruler,
+  TrendingUp, TrendingDown, ClipboardList,
+  FilePlus, ListChecks, Settings2, BookOpen, Table2, Tags, DoorOpen, Network,
   type LucideIcon,
 } from "lucide-react";
 
@@ -82,12 +86,157 @@ const systemMenu: NavItem = {
   ],
 };
 
+const definitionsMenu: NavItem = {
+  id: "definitions",
+  title: "تعاریف",
+  icon: FileText,
+  children: [
+    { id: "products-services", title: "لیست کالا و خدمات", icon: Package, href: "/accounting/definitions/products-services", children: [] },
+    { id: "auto-optic-coding", title: "ایجاد اتوماتیک کدینگ اپتیک", icon: Boxes, href: "/accounting/definitions/auto-optic-coding", children: [] },
+    { id: "price-change", title: "تغییر قیمت کالاها", icon: Tag, href: "/accounting/definitions/price-change", children: [] },
+    {
+      id: "subsidiary-accounts",
+      title: "حساب‌های معین",
+      icon: Wallet,
+      children: [
+        { id: "counterparties", title: "لیست طرف حساب‌ها", icon: Users, href: "/accounting/definitions/subsidiary/counterparties", children: [] },
+        { id: "cash-boxes", title: "لیست صندوق‌ها", icon: Wallet, href: "/accounting/definitions/subsidiary/cash-boxes", children: [] },
+        { id: "bank-accounts", title: "لیست حساب‌های بانکی", icon: CreditCard, href: "/accounting/definitions/subsidiary/bank-accounts", children: [] },
+        { id: "petty-cash", title: "لیست تنخواه گردان‌ها", icon: Coins, href: "/accounting/definitions/subsidiary/petty-cash", children: [] },
+        { id: "shareholders", title: "لیست سهامداران", icon: Users, href: "/accounting/definitions/subsidiary/shareholders", children: [] },
+        { id: "personnel", title: "لیست پرسنل", icon: UserCog, href: "/accounting/definitions/subsidiary/personnel", children: [] },
+        { id: "expenses", title: "لیست هزینه‌ها", icon: Receipt, href: "/accounting/definitions/subsidiary/expenses", children: [] },
+        { id: "services", title: "لیست خدمات", icon: BadgePercent, href: "/accounting/definitions/subsidiary/services", children: [] },
+        { id: "import-subsidiary", title: "ایمپورت حساب‌های معین", icon: Upload, href: "/accounting/definitions/subsidiary/import", children: [] },
+      ],
+    },
+    { id: "warehouses", title: "لیست انبار", icon: Warehouse, href: "/accounting/definitions/warehouses", children: [] },
+    { id: "vat-groups", title: "گروه‌های مالیات بر ارزش افزوده", icon: Receipt, href: "/accounting/definitions/vat-groups", children: [] },
+    { id: "sale-price-list", title: "لیست قیمت فروش", icon: Tag, href: "/accounting/definitions/sale-price-list", children: [] },
+    {
+      id: "base-definitions",
+      title: "تعاریف پایه",
+      icon: Layers,
+      children: [
+        { id: "units", title: "لیست واحدها", icon: Ruler, href: "/accounting/definitions/base/units", children: [] },
+        { id: "banks", title: "لیست بانک‌ها", icon: Banknote, href: "/accounting/definitions/base/banks", children: [] },
+        { id: "packaging", title: "لیست بسته‌بندی کالاها", icon: Boxes, href: "/accounting/definitions/base/packaging", children: [] },
+        { id: "provinces", title: "لیست استان‌ها", icon: Map, href: "/accounting/definitions/base/provinces", children: [] },
+        { id: "cities", title: "لیست شهرها", icon: Building, href: "/accounting/definitions/base/cities", children: [] },
+        { id: "cash-box-cards", title: "تعریف کارت‌های صندوق", icon: CreditCard, href: "/accounting/definitions/base/cash-box-cards", children: [] },
+      ],
+    },
+  ],
+};
+
+const taxMenu: NavItem = {
+  id: "tax",
+  title: "مالیات",
+  icon: Receipt,
+  children: [
+    { id: "tax-seasonal-sales", title: "گزارش فصلی فروش", icon: TrendingUp, href: "/accounting/tax/seasonal-sales-report", children: [] },
+    { id: "tax-seasonal-purchase", title: "گزارش فصلی خرید", icon: TrendingDown, href: "/accounting/tax/seasonal-purchase-report", children: [] },
+  ],
+};
+
+const assetsMenu: NavItem = {
+  id: "assets",
+  title: "اموال و دارائی",
+  icon: Building2,
+  children: [
+    { id: "assets-list", title: "لیست اموال و دارائی ثابت", icon: ClipboardList, href: "/accounting/assets/list", children: [] },
+    {
+      id: "assets-reports",
+      title: "گزارشات",
+      icon: BarChart3,
+      children: [
+        { id: "assets-report", title: "گزارش دارایی‌ها و اموال", icon: ClipboardList, href: "/accounting/assets/report", children: [] },
+        { id: "assets-inventory-report", title: "گزارش موجودی دارایی و اموال", icon: Package, href: "/accounting/assets/inventory-report", children: [] },
+      ],
+    },
+  ],
+};
+
+const accountingMenu: NavItem = {
+  id: "accounting",
+  title: "حسابداری",
+  icon: Calculator,
+  children: [
+    { id: "issue-voucher", title: "صدور سند حسابداری", icon: FilePlus, href: "/accounting/voucher/new", children: [] },
+    {
+      id: "voucher-list",
+      title: "لیست اسناد",
+      icon: ListChecks,
+      children: [
+        { id: "manual-vouchers", title: "اسناد دستی", href: "/accounting/vouchers/manual", children: [] },
+        { id: "opening-vouchers", title: "اسناد افتتاحیه", href: "/accounting/vouchers/opening", children: [] },
+        { id: "closing-vouchers", title: "اسناد اختتامیه", href: "/accounting/vouchers/closing", children: [] },
+        { id: "all-vouchers", title: "کلیه اسناد", href: "/accounting/vouchers/all", children: [] },
+      ],
+    },
+    {
+      id: "voucher-operations",
+      title: "عملیات اسناد",
+      icon: Settings2,
+      children: [
+        { id: "insert-between", title: "درج بین اسناد", href: "/accounting/operations/insert", children: [] },
+        { id: "sort-by-date", title: "مرتب کردن اسناد بر اساس تاریخ", href: "/accounting/operations/sort", children: [] },
+        { id: "delete-empty-numbers", title: "حذف شماره‌های خالی", href: "/accounting/operations/delete-empty", children: [] },
+        { id: "change-voucher-status", title: "تغییر وضعیت اسناد", href: "/accounting/operations/status", children: [] },
+        { id: "change-sign-status", title: "تغییر وضعیت امضاء اسناد", href: "/accounting/operations/sign-status", children: [] },
+      ],
+    },
+    {
+      id: "opening-closing",
+      title: "عملیات افتتاحیه و اختتامیه",
+      icon: DoorOpen,
+      children: [
+        { id: "opening-doc", title: "سند افتتاحیه", href: "/accounting/opening-closing/opening", children: [] },
+        { id: "closing-doc", title: "سند اختتامیه", href: "/accounting/opening-closing/closing", children: [] },
+      ],
+    },
+    {
+      id: "ledgers",
+      title: "دفاتر",
+      icon: BookOpen,
+      children: [
+        { id: "journal", title: "دفتر روزنامه", href: "/accounting/ledgers/journal", children: [] },
+        { id: "general-ledger", title: "دفتر کل", href: "/accounting/ledgers/general", children: [] },
+        { id: "subsidiary-ledger", title: "دفتر معین", href: "/accounting/ledgers/subsidiary", children: [] },
+        { id: "detail-ledger", title: "دفتر تفصیل", href: "/accounting/ledgers/detail", children: [] },
+      ],
+    },
+    {
+      id: "financial-tables",
+      title: "جداول مالی",
+      icon: Table2,
+      children: [
+        { id: "trial-balance", title: "ترازنامه", href: "/accounting/tables/balance-sheet", children: [] },
+        { id: "trial-2col", title: "تراز آزمایشی دو ستونی", href: "/accounting/tables/trial-2col", children: [] },
+        { id: "trial-4col", title: "تراز آزمایشی چهار ستونی", href: "/accounting/tables/trial-4col", children: [] },
+        { id: "trial-8col", title: "تراز آزمایشی هشت ستونی", href: "/accounting/tables/trial-8col", children: [] },
+        { id: "trial-hierarchical", title: "تراز آزمایشی سلسله مراتبی", href: "/accounting/tables/trial-hierarchical", children: [] },
+      ],
+    },
+    {
+      id: "acc-definitions",
+      title: "تعاریف",
+      icon: Tags,
+      children: [
+        { id: "accounts-tree", title: "نمودار درختی حساب‌ها", icon: Network, href: "/accounting/definitions/accounts-tree", children: [] },
+        { id: "detail-accounts", title: "تفصیلی", icon: Layers, href: "/accounting/definitions/detail", children: [] },
+        { id: "descriptions-list", title: "لیست توضیحات", icon: FileText, href: "/accounting/definitions/descriptions", children: [] },
+      ],
+    },
+  ],
+};
+
 const accountingItems: NavItem[] = [
   systemMenu,
-  { id: "definitions", title: "تعاریف", icon: FileText, children: [] },
-  { id: "tax", title: "مالیات", icon: Receipt, children: [] },
-  { id: "assets", title: "اموال و دارائی", icon: Building2, children: [] },
-  { id: "accounting", title: "حسابداری", icon: Calculator, children: [] },
+  definitionsMenu,
+  taxMenu,
+  assetsMenu,
+  accountingMenu,
   { id: "warehouse", title: "مدیریت انبار", icon: Warehouse, children: [] },
   { id: "treasury", title: "خزانه‌داری", icon: Landmark, children: [] },
   { id: "purchase", title: "خرید", icon: ShoppingCart, children: [] },
