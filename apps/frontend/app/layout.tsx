@@ -21,7 +21,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fa" dir="rtl" className={vazirmatn.variable}>
-      <body className="min-h-screen bg-primary-50/30 font-sans">
+      <body className="min-h-screen bg-primary-50/30 font-sans" suppressHydrationWarning>
         {children}
       </body>
     </html>
