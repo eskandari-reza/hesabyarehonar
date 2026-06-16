@@ -19,7 +19,7 @@ import { CoaModule } from './coa/coa.module';
         password: config.get<string>('DB_PASSWORD'),
         database: config.get<string>('DB_DATABASE'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: config.get('NODE_ENV') !== 'production',
+        synchronize: false,
       }),
     }),
     CoaModule,   // ⬅️ اضافه شد
