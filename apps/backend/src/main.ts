@@ -39,6 +39,10 @@ async function bootstrap() {
 
   // ۳) راه‌اندازی اپ
   const app = await NestFactory.create(AppModule);
+  app.enableCors({
+  origin: ['http://localhost:3001', 'http://localhost:3000'],
+  credentials: true,
+});
   await app.listen(process.env.PORT || 3000);
   console.log(`🚀 اپ روی پورت ${process.env.PORT || 3000} بالا اومد`);
 }

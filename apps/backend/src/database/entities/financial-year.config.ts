@@ -1,3 +1,4 @@
+// apps/backend/src/global/database/financial-year.config.ts
 import { DataSourceOptions } from 'typeorm';
 
 export const FINANCIAL_DB_PREFIX = 'DB1';
@@ -24,7 +25,7 @@ export function buildYearDataSourceOptions(
   return {
     type: 'postgres',
     host: process.env.DB_HOST ?? 'localhost',
-    port: Number(process.env.DB_PORT ?? 5433), // پورت واقعی شما
+    port: Number(process.env.DB_PORT ?? 5433),
     username: process.env.DB_USERNAME ?? 'postgres',
     password: process.env.DB_PASSWORD,
     database: buildDatabaseName(year),

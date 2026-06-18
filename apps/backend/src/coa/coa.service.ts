@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Repository, IsNull } from 'typeorm';
-import { DataSourceManager } from '../database/data-source-manager.service';
+import { DataSourceManager } from '../database/entities/data-source-manager.service';
 import { Coa } from '../database/entities/financial/coa.entity';
 import { CoaNodeDto } from './dto/coa-node.dto';
 
