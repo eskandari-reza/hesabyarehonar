@@ -1,5 +1,6 @@
 import { User } from './user.entity';
 import { Sms } from './sms.entity';
+import { Coa } from './coa.entity'; // ✅ اضافه شد
 import { CoaGp } from './coa-gp.entity';
 import { DocDetail } from './doc-detail.entity';
 import { DocMaster } from './doc-master.entity';
@@ -15,6 +16,7 @@ import { WeeklyDiscount } from './weekly-discount.entity';
 import { WindowsSetting } from './windows-setting.entity';
 
 export const COA_ENTITIES = [
+  Coa, // ✅ اضافه شد
   User,
   Sms,
   CoaGp,
@@ -32,6 +34,7 @@ export const COA_ENTITIES = [
   WindowsSetting,
 ];
 
+export * from './coa.entity'; // ✅ اضافه شد
 export * from './user.entity';
 export * from './sms.entity';
 export * from './coa-gp.entity';

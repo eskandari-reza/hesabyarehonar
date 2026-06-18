@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { CoaModule } from './coa/entities/coa.module';
+import { CoaModule } from './coa/coa.module';
 
 @Module({
   imports: [

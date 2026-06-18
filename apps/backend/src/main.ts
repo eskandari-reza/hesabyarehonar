@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { AcctDataSource } from './global/acct.datasource';
-import { Year } from './global/entities/year.entity';
-import { Company } from './global/entities/company.entity';
+import { AcctDataSource } from './database/entities/global/acct.datasource';
+import { Year } from './database/entities/global/year.entity';
+import { Company } from './database/entities/global/company.entity';
 
 async function bootstrap() {
   // ۱) اتصال به دیتابیس سراسری

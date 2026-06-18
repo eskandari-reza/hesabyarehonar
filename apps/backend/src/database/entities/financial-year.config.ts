@@ -1,4 +1,3 @@
-// apps/backend/src/global/database/financial-year.config.ts
 import { DataSourceOptions } from 'typeorm';
 
 export const FINANCIAL_DB_PREFIX = 'DB1';

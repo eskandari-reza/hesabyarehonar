@@ -8,7 +8,7 @@ import { DataSource, DataSourceOptions } from 'typeorm';import {
   buildYearDataSourceOptions,
   assertValidYear,
   buildDatabaseName,
-} from './financial-year.config';
+} from '../database/entities/financial-year.config';
 
 @Injectable()
 export class DataSourceManager implements OnModuleDestroy {
@@ -62,6 +62,7 @@ export class DataSourceManager implements OnModuleDestroy {
     this.logger.log(`DataSource initialized: ${buildDatabaseName(year)}`);
     return dataSource;
   }
+  
 
   /** بستن یک اتصال خاص (برای استفاده‌ی آینده / TTL) */
   async destroy(year: number | string): Promise<void> {
