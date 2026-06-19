@@ -1,6 +1,6 @@
 // apps/backend/src/global/database/database.module.ts
 import { Module, Global } from '@nestjs/common';
-import { DataSourceManager } from './data-source-manager.service';
+import { DataSourceManager } from '../data-source-manager.service';
 // لیست entityهای مشترک دیتابیس‌های سال مالی را ایمپورت کن
 // import { ChartOfAccount } from '...';
 import { WindowsSetting } from './financial/windows-setting.entity';

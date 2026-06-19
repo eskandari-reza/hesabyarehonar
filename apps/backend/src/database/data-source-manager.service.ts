@@ -8,7 +8,7 @@ import { DataSource, DataSourceOptions } from 'typeorm';import {
   buildYearDataSourceOptions,
   assertValidYear,
   buildDatabaseName,
-} from './financial-year.config';
+} from './entities/financial-year.config';
 
 @Injectable()
 export class DataSourceManager implements OnModuleDestroy {
