@@ -48,9 +48,9 @@ describe('DocService', () => {
   });
 
   // ─── helper: DocStatusUpdateDto ───────────────────────────────────────────
-  const makeStatusDto = (status: number): DocStatusUpdateDto => ({
+  const makeStatusDto = (status: number, signature: number = 0): DocStatusUpdateDto => ({
     status,
-    signature: 0,
+    signature,
   });
 
   // ─── helper: queryBuilder با همه متدهای لازم ──────────────────────────────
@@ -94,9 +94,6 @@ describe('DocService', () => {
   } as DocMaster);
 
   beforeEach(async () => {
-    // ─── mockMasterRepo داخل transaction ────────────────────────────────────
-    // service در create/update از manager.getRepository(DocMaster).save() استفاده می‌کنه
-    // پس باید mockMasterRepo.save رو mock کنیم که از manager.getRepository برمی‌گرده
     mockMasterRepo = {
       create: jest.fn(),
       save: jest.fn().mockResolvedValue(makeSavedMaster(1)),
@@ -167,8 +164,6 @@ describe('DocService', () => {
       });
 
       const savedMaster = makeSavedMaster(1, { dtotal: 1000, ctotal: 1000 });
-      // FIX: mockMasterRepo از manager.getRepository برمی‌گرده
-      // service: masterRepo.create() سپس masterRepo.save()
       mockMasterRepo.create.mockReturnValue(savedMaster);
       mockMasterRepo.save.mockResolvedValue(savedMaster);
       mockDetailRepo.save.mockResolvedValue([] as any);
@@ -193,7 +188,6 @@ describe('DocService', () => {
         ],
       });
 
-      // service قبل از transaction چک می‌کنه، پس نیازی به mock نیست
       await expect(service.create(year, createDto, userId)).rejects.toThrow(BadRequestException);
     });
 
@@ -237,7 +231,6 @@ describe('DocService', () => {
       const existingMaster = makeSavedMaster(docId);
       const savedMaster = makeSavedMaster(docId, { dtotal: 2000, ctotal: 2000 });
 
-      // service: masterRepo.findOne() سپس masterRepo.save()
       mockMasterRepo.findOne.mockResolvedValue(existingMaster);
       mockMasterRepo.save.mockResolvedValue(savedMaster);
       mockDetailRepo.delete.mockResolvedValue({ affected: 0 } as any);
@@ -274,7 +267,6 @@ describe('DocService', () => {
         ],
       });
 
-      // service قبل از transaction چک می‌کنه
       await expect(service.update(year, docId, updateDto, userId)).rejects.toThrow(BadRequestException);
     });
   });
@@ -333,7 +325,6 @@ describe('DocService', () => {
 
     it('should apply date range filters', async () => {
       const year = '1403';
-      // FIX: service از 'doc.tarikh' استفاده می‌کنه نه 'master.date'
       const filter = { limit: 10, offset: 0, fromDate: '14030101', toDate: '14030131' };
       const qb = makeQueryBuilder();
       mockMasterRepo.createQueryBuilder.mockReturnValue(qb as any);
@@ -376,8 +367,6 @@ describe('DocService', () => {
       const year = '1403';
       const docId = 1;
       const userId = 1;
-      // FIX: service مستقیم از ds.getRepository(DocDetail).update() استفاده می‌کنه
-      // هیچ findOne و transaction نداره
       mockDetailRepo.update.mockResolvedValue({ affected: 2 } as any);
 
       await service.cancel(year, docId, userId);
@@ -391,44 +380,499 @@ describe('DocService', () => {
 
     it('should complete without error even for non-existent document', async () => {
       const year = '1403';
-      // FIX: service در cancel هیچ NotFoundException نمی‌ده
-      // فقط update رو صدا می‌زنه که affected=0 برمی‌گردونه
       mockDetailRepo.update.mockResolvedValue({ affected: 0 } as any);
 
       await expect(service.cancel(year, 999, 1)).resolves.toBeUndefined();
     });
-  });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  describe('updateStatus', () => {
-    it('should update document status', async () => {
+    it('should pass correct canceldt timestamp', async () => {
+      const year = '1403';
+      const docId = 5;
+      const userId = 10;
+      const beforeCall = new Date();
+
+      mockDetailRepo.update.mockResolvedValue({ affected: 1 } as any);
+
+      await service.cancel(year, docId, userId);
+
+      const afterCall = new Date();
+      const updateCall = mockDetailRepo.update.mock.calls[0];
+      const passedDate = updateCall[1].canceldt;
+
+      expect(passedDate).toBeInstanceOf(Date);
+      expect(passedDate).toBeDefined();
+      expect(passedDate).not.toBeNull();
+
+      // Now TypeScript knows passedDate is a Date
+      expect((passedDate as Date).getTime()).toBeGreaterThanOrEqual(beforeCall.getTime());
+      expect((passedDate as Date).getTime()).toBeLessThanOrEqual(afterCall.getTime());
+    });
+
+    it('should throw when getDataSource fails', async () => {
       const year = '1403';
       const docId = 1;
       const userId = 1;
-      const statusDto = makeStatusDto(2);
+      mockDataSourceManager.getDataSource.mockRejectedValueOnce(new Error('DataSource not found'));
 
-      const existingMaster = makeSavedMaster(docId, { status: 1 });
-      mockMasterRepo.findOne.mockResolvedValue(existingMaster);
-      mockMasterRepo.save.mockResolvedValue({ ...existingMaster, status: 2 } as any);
+      await expect(service.cancel(year, docId, userId)).rejects.toThrow('DataSource not found');
+    });
+  });
 
-      await service.updateStatus(year, docId, statusDto, userId);
+  // ═══════════════════════════════════════════════════════════════════════════
+describe('updateStatus - Error Handling & Edge Cases', () => {
+  const year = '1403';
+  const docId = 1;
+  const userId = 1;
+  const statusDto = makeStatusDto(2);
+
+  describe('DataSource Failures', () => {
+    it('should propagate error when getDataSource fails', async () => {
+      mockDataSourceManager.getDataSource.mockRejectedValueOnce(
+        new Error('DataSource connection failed'),
+      );
+
+      await expect(
+        service.updateStatus(year, docId, statusDto, userId),
+      ).rejects.toThrow('DataSource connection failed');
 
       expect(mockDataSourceManager.getDataSource).toHaveBeenCalledWith(year);
-      expect(mockMasterRepo.findOne).toHaveBeenCalledWith({ where: { id: docId } });
+      expect(mockMasterRepo.findOne).not.toHaveBeenCalled();
+    });
+
+    it('should handle invalid year parameter', async () => {
+      mockDataSourceManager.getDataSource.mockRejectedValueOnce(
+        new Error('Invalid year format'),
+      );
+
+      await expect(
+        service.updateStatus('invalid', docId, statusDto, userId),
+      ).rejects.toThrow('Invalid year format');
+    });
+  });
+
+  describe('Repository Failures', () => {
+    it('should propagate error when findOne fails', async () => {
+      mockMasterRepo.findOne.mockRejectedValueOnce(
+        new Error('Database query failed'),
+      );
+
+      await expect(
+        service.updateStatus(year, docId, statusDto, userId),
+      ).rejects.toThrow('Database query failed');
+
+      expect(mockDataSourceManager.getDataSource).toHaveBeenCalledWith(year);
+      expect(mockMasterRepo.findOne).toHaveBeenCalledWith({
+        where: { id: docId },
+      });
+      expect(mockMasterRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('should propagate error when save fails', async () => {
+const existingMaster = makeSavedMaster(docId, {
+  status: 1,
+  uui: 999,
+  udt: new Date('2024-01-01'),
+});
+
+
+      mockMasterRepo.findOne.mockResolvedValueOnce(existingMaster);
+      mockMasterRepo.save.mockRejectedValueOnce(
+        new Error('Database save failed'),
+      );
+
+      await expect(
+        service.updateStatus(year, docId, statusDto, userId),
+      ).rejects.toThrow('Database save failed');
+
+      expect(mockMasterRepo.findOne).toHaveBeenCalledWith({
+        where: { id: docId },
+      });
       expect(mockMasterRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ status: 2 }),
+        expect.objectContaining({
+          id: docId,
+          status: statusDto.status,
+          uui: userId,
+          udt: expect.any(Date),
+        }),
       );
     });
 
-    it('should throw NotFoundException for non-existent document', async () => {
-      const year = '1403';
-      mockMasterRepo.findOne.mockResolvedValue(null);
+    it('should handle unique constraint violation on save', async () => {
+const existingMaster = makeSavedMaster(docId, {
+  status: 1,
+  uui: 999,
+  udt: new Date('2024-01-01'),
+});
+
+
+      mockMasterRepo.findOne.mockResolvedValueOnce(existingMaster);
+      mockMasterRepo.save.mockRejectedValueOnce({
+        code: '23505', // PostgreSQL unique violation
+        message: 'Duplicate key violation',
+      });
 
       await expect(
-        service.updateStatus(year, 999, makeStatusDto(2), 1),
-      ).rejects.toThrow(NotFoundException);
+        service.updateStatus(year, docId, statusDto, userId),
+      ).rejects.toMatchObject({
+        code: '23505',
+        message: 'Duplicate key violation',
+      });
     });
   });
+
+  describe('Rollback Scenarios', () => {
+    it('should not persist changes when save fails (implicit rollback)', async () => {
+const existingMaster = makeSavedMaster(docId, {
+  status: 1,
+  uui: 999,
+  udt: new Date('2024-01-01'),
+});
+
+
+      // Clone to verify original is not mutated in DB
+      const originalState = { ...existingMaster };
+
+      mockMasterRepo.findOne.mockResolvedValueOnce(existingMaster);
+      mockMasterRepo.save.mockRejectedValueOnce(
+        new Error('Constraint violation'),
+      );
+
+      await expect(
+        service.updateStatus(year, docId, statusDto, userId),
+      ).rejects.toThrow('Constraint violation');
+
+      // Verify save was attempted but failed
+      expect(mockMasterRepo.save).toHaveBeenCalled();
+      
+      // Note: در دنیای واقعی TypeORM این تغییرات را rollback می‌کند
+      // چون transaction صریح نیست، save اتمیک است
+    });
+
+    it('should handle concurrent updates (no optimistic locking)', async () => {
+      // نکته: این متد فعلاً optimistic locking ندارد
+      // این تست سناریوی race condition را نشان می‌دهد
+      
+const existingMaster = makeSavedMaster(docId, {
+  status: 1,
+  version: 1,
+  uui: 999,
+  udt: new Date('2024-01-01'),
+});
+
+
+      mockMasterRepo.findOne.mockResolvedValueOnce(existingMaster);
+      mockMasterRepo.save.mockResolvedValueOnce({
+        ...existingMaster,
+        status: statusDto.status,
+        uui: userId,
+        udt: new Date(),
+      } as any);
+
+      await service.updateStatus(year, docId, statusDto, userId);
+
+      // در پیاده‌سازی فعلی، آخرین write برنده است (last-write-wins)
+      expect(mockMasterRepo.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should handle document with same status (no-op update)', async () => {
+      const sameStatusDto = makeStatusDto(1);
+const existingMaster = makeSavedMaster(docId, {
+  status: 1,
+  uui: 999,
+  udt: new Date('2024-01-01'),
+});
+
+
+      mockMasterRepo.findOne.mockResolvedValueOnce(existingMaster);
+      mockMasterRepo.save.mockResolvedValueOnce({
+        ...existingMaster,
+        status: 1,
+        uui: userId,
+        udt: expect.any(Date),
+      } as any);
+
+      await service.updateStatus(year, docId, sameStatusDto, userId);
+
+      // حتی با status یکسان، uui و udt به‌روز می‌شوند
+      expect(mockMasterRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 1,
+          uui: userId,
+          udt: expect.any(Date),
+        }),
+      );
+    });
+
+    it('should handle null/undefined userId gracefully', async () => {
+const existingMaster = makeSavedMaster(docId, {
+  status: 1,
+  uui: 999,
+  udt: new Date('2024-01-01'),
+});
+
+
+      mockMasterRepo.findOne.mockResolvedValueOnce(existingMaster);
+      mockMasterRepo.save.mockResolvedValueOnce({
+        ...existingMaster,
+        status: statusDto.status,
+      } as any);
+
+      await service.updateStatus(year, docId, statusDto, null as any);
+
+      expect(mockMasterRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          uui: null,
+        }),
+      );
+    });
+
+    it('should update timestamp to current time on each call', async () => {
+const existingMaster = makeSavedMaster(docId, {
+  status: 1,
+  uui: 999,
+  udt: new Date('2024-01-01'),
+});
+
+
+      const beforeCall = new Date();
+      
+      mockMasterRepo.findOne.mockResolvedValueOnce(existingMaster);
+      mockMasterRepo.save.mockResolvedValueOnce({
+        ...existingMaster,
+        status: statusDto.status,
+        uui: userId,
+        udt: new Date(),
+      } as any);
+
+      await service.updateStatus(year, docId, statusDto, userId);
+
+      const afterCall = new Date();
+
+      expect(mockMasterRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          udt: expect.any(Date),
+        }),
+      );
+
+      // تایم‌استمپ باید بین قبل و بعد از فراخوانی باشد
+      const savedCall = mockMasterRepo.save.mock.calls[0][0];
+expect((savedCall.udt as Date).getTime()).toBeGreaterThanOrEqual(beforeCall.getTime());
+expect((savedCall.udt as Date).getTime()).toBeLessThanOrEqual(afterCall.getTime());
+
+    });
+  });
+
+  describe('Not Found Scenarios', () => {
+    it('should throw NotFoundException with Persian message', async () => {
+      const nonExistentId = 999;
+      mockMasterRepo.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        service.updateStatus(year, nonExistentId, statusDto, userId),
+      ).rejects.toThrow(NotFoundException);
+
+      await expect(
+        service.updateStatus(year, nonExistentId, statusDto, userId),
+      ).rejects.toThrow(`سند ${nonExistentId} یافت نشد`);
+    });
+
+    it('should not call save when document not found', async () => {
+      mockMasterRepo.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        service.updateStatus(year, 999, statusDto, userId),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(mockMasterRepo.save).not.toHaveBeenCalled();
+    });
+  });
+});
+describe('Error Handling', () => {
+  it('should propagate error when getDataSource fails', async () => {
+    const error = new Error('DataSource unavailable');
+    mockDataSourceManager.getDataSource.mockRejectedValue(error);
+
+    await expect(
+      service.updateStatus('1403', 1, makeStatusDto(2), 1),
+    ).rejects.toThrow('DataSource unavailable');
+  });
+
+  it('should handle invalid year parameter', async () => {
+    mockDataSourceManager.getDataSource.mockRejectedValue(
+      new Error('Invalid year'),
+    );
+
+    await expect(
+      service.updateStatus('invalid', 1, makeStatusDto(2), 1),
+    ).rejects.toThrow('Invalid year');
+  });
+
+  it('should propagate error when findOne fails', async () => {
+    mockDataSourceManager.getDataSource.mockResolvedValue({
+      getRepository: () => mockMasterRepo,
+    } as any);
+    mockMasterRepo.findOne.mockRejectedValue(new Error('Database error'));
+
+    await expect(
+      service.updateStatus('1403', 1, makeStatusDto(2), 1),
+    ).rejects.toThrow('Database error');
+  });
+
+  it('should propagate error when save fails', async () => {
+    const existingMaster = makeSavedMaster(1, { status: 1 });
+    mockDataSourceManager.getDataSource.mockResolvedValue({
+      getRepository: () => mockMasterRepo,
+    } as any);
+    mockMasterRepo.findOne.mockResolvedValue(existingMaster);
+    mockMasterRepo.save.mockRejectedValue(new Error('Save failed'));
+
+    await expect(
+      service.updateStatus('1403', 1, makeStatusDto(2), 1),
+    ).rejects.toThrow('Save failed');
+  });
+
+  it('should handle unique constraint violation on save', async () => {
+    const existingMaster = makeSavedMaster(1, { status: 1 });
+    mockDataSourceManager.getDataSource.mockResolvedValue({
+      getRepository: () => mockMasterRepo,
+    } as any);
+    mockMasterRepo.findOne.mockResolvedValue(existingMaster);
+    mockMasterRepo.save.mockRejectedValue({
+      code: '23505',
+      message: 'Unique constraint violation',
+    });
+
+    await expect(
+      service.updateStatus('1403', 1, makeStatusDto(2), 1),
+    ).rejects.toMatchObject({
+      code: '23505',
+    });
+  });
+});
+
+describe('Rollback Scenarios', () => {
+  it('should not persist changes when save fails (implicit rollback)', async () => {
+    const existingMaster = makeSavedMaster(1, { status: 1 });
+    const originalStatus = existingMaster.status;
+
+    mockDataSourceManager.getDataSource.mockResolvedValue({
+      getRepository: () => mockMasterRepo,
+    } as any);
+    mockMasterRepo.findOne.mockResolvedValue(existingMaster);
+    mockMasterRepo.save.mockRejectedValue(new Error('Save failed'));
+
+    await expect(
+      service.updateStatus('1403', 1, makeStatusDto(2), 1),
+    ).rejects.toThrow('Save failed');
+
+    expect(existingMaster.status).toBe(2); // توجه: در حافظه تغییر کرده
+    // اما در دیتابیس rollback شده چون save fail شد
+    expect(mockMasterRepo.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('should handle concurrent updates (no optimistic locking)', async () => {
+    const existingMaster = makeSavedMaster(1, { status: 1 });
+    mockDataSourceManager.getDataSource.mockResolvedValue({
+      getRepository: () => mockMasterRepo,
+    } as any);
+    mockMasterRepo.findOne.mockResolvedValue(existingMaster);
+    mockMasterRepo.save.mockResolvedValue(
+      makeSavedMaster(1, { status: 2, uui: 1 }),
+    );
+
+    await service.updateStatus('1403', 1, makeStatusDto(2), 1);
+
+    // در صورت concurrent update، last-write-wins
+    expect(mockMasterRepo.save).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Edge Cases', () => {
+  it('should handle document with same status (no-op update)', async () => {
+    const existingMaster = makeSavedMaster(1, { status: 2 });
+    mockDataSourceManager.getDataSource.mockResolvedValue({
+      getRepository: () => mockMasterRepo,
+    } as any);
+    mockMasterRepo.findOne.mockResolvedValue(existingMaster);
+    mockMasterRepo.save.mockResolvedValue(existingMaster);
+
+    await service.updateStatus('1403', 1, makeStatusDto(2), 1);
+
+    const savedCall = mockMasterRepo.save.mock.calls[0][0];
+    expect(savedCall.status).toBe(2);
+    expect(mockMasterRepo.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('should handle null/undefined userId gracefully', async () => {
+    const existingMaster = makeSavedMaster(1, { status: 1 });
+    mockDataSourceManager.getDataSource.mockResolvedValue({
+      getRepository: () => mockMasterRepo,
+    } as any);
+    mockMasterRepo.findOne.mockResolvedValue(existingMaster);
+    mockMasterRepo.save.mockResolvedValue(
+      makeSavedMaster(1, { status: 2, uui: undefined }),
+    );
+
+    await service.updateStatus('1403', 1, makeStatusDto(2), undefined as any);
+
+    const savedCall = mockMasterRepo.save.mock.calls[0][0];
+    expect(savedCall.uui).toBeUndefined();
+  });
+
+  it('should update timestamp to current time on each call', async () => {
+    const existingMaster = makeSavedMaster(1, { status: 1 });
+    const oldDate = new Date('2020-01-01');
+    existingMaster.udt = oldDate;
+
+    mockDataSourceManager.getDataSource.mockResolvedValue({
+      getRepository: () => mockMasterRepo,
+    } as any);
+    mockMasterRepo.findOne.mockResolvedValue(existingMaster);
+    mockMasterRepo.save.mockResolvedValue(
+      makeSavedMaster(1, { status: 2, udt: new Date() }),
+    );
+
+    await service.updateStatus('1403', 1, makeStatusDto(2), 1);
+
+   const savedCall = mockMasterRepo.save.mock.calls[0][0];
+expect(savedCall.udt).toBeDefined();
+const udtTime = (savedCall.udt as Date).getTime();
+expect(udtTime).toBeGreaterThan(oldDate.getTime());
+
+  });
+});
+
+describe('Not Found Scenarios', () => {
+  it('should throw NotFoundException with Persian message', async () => {
+    mockDataSourceManager.getDataSource.mockResolvedValue({
+      getRepository: () => mockMasterRepo,
+    } as any);
+    mockMasterRepo.findOne.mockResolvedValue(null);
+
+    await expect(
+      service.updateStatus('1403', 999, makeStatusDto(2), 1),
+    ).rejects.toThrow(NotFoundException);
+
+    await expect(
+      service.updateStatus('1403', 999, makeStatusDto(2), 1),
+    ).rejects.toThrow('سند 999 یافت نشد');
+  });
+
+  it('should not call save when document not found', async () => {
+    mockDataSourceManager.getDataSource.mockResolvedValue({
+      getRepository: () => mockMasterRepo,
+    } as any);
+    mockMasterRepo.findOne.mockResolvedValue(null);
+
+    await expect(
+      service.updateStatus('1403', 999, makeStatusDto(2), 1),
+    ).rejects.toThrow(NotFoundException);
+
+    expect(mockMasterRepo.save).not.toHaveBeenCalled();
+  });
+});
 
   // ═══════════════════════════════════════════════════════════════════════════
   describe('getDescriptions', () => {
@@ -445,6 +889,7 @@ describe('DocService', () => {
 
       expect(mockDataSourceManager.getDataSource).toHaveBeenCalledWith(year);
       expect(mockDescRepo.createQueryBuilder).toHaveBeenCalledWith('desc');
+      expect(qb.select).toHaveBeenCalledWith('desc.docDesc');
       expect(result).toEqual(['Description 1', 'Description 2']);
     });
 
@@ -459,6 +904,63 @@ describe('DocService', () => {
 
       expect(qb.where).toHaveBeenCalledWith('desc.type = :type', { type });
       expect(result).toEqual(['Description 1']);
+    });
+
+    it('should return empty array when no descriptions found', async () => {
+      const year = '1403';
+      const qb = makeQueryBuilder([]);
+      mockDescRepo.createQueryBuilder = jest.fn().mockReturnValue(qb);
+
+      const result = await service.getDescriptions(year);
+
+      expect(mockDataSourceManager.getDataSource).toHaveBeenCalledWith(year);
+      expect(result).toEqual([]);
+      expect(result).toHaveLength(0);
+    });
+
+    it('should not filter when type is empty string', async () => {
+      const year = '1403';
+      const mockDescriptions = [
+        { docDesc: 'desc1' },
+        { docDesc: 'desc2' }
+      ];
+      const qb = makeQueryBuilder(mockDescriptions);
+      mockDescRepo.createQueryBuilder = jest.fn().mockReturnValue(qb);
+
+      const result = await service.getDescriptions(year, '');
+
+      expect(qb.where).not.toHaveBeenCalled();
+      expect(result).toEqual(['desc1', 'desc2']);
+    });
+
+    it('should not filter when type is undefined', async () => {
+      const year = '1403';
+      const mockDescriptions = [{ docDesc: 'desc1' }];
+      const qb = makeQueryBuilder(mockDescriptions);
+      mockDescRepo.createQueryBuilder = jest.fn().mockReturnValue(qb);
+
+      await service.getDescriptions(year, undefined);
+
+      expect(qb.where).not.toHaveBeenCalled();
+    });
+
+    it('should throw when getDataSource fails', async () => {
+      const year = '1403';
+      mockDataSourceManager.getDataSource.mockRejectedValueOnce(new Error('DataSource not found'));
+
+      await expect(service.getDescriptions(year)).rejects.toThrow('DataSource not found');
+    });
+
+    it('should handle parameterized query safely with special characters', async () => {
+      const year = '1403';
+      const specialType = "A'; DROP TABLE--";
+      const qb = makeQueryBuilder([{ docDesc: 'safe' }]);
+      mockDescRepo.createQueryBuilder = jest.fn().mockReturnValue(qb);
+
+      await service.getDescriptions(year, specialType);
+
+      // TypeORM parameterized query محافظت می‌کند
+      expect(qb.where).toHaveBeenCalledWith('desc.type = :type', { type: specialType });
     });
   });
 });

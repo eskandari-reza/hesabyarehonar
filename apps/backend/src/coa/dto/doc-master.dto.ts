@@ -128,7 +128,7 @@ export class DocMasterDto {
   @ApiProperty()
   @Type(() => Date)
   @IsDate()
-  cdt: Date;
+  cdt: Date | null;
 
   @ApiPropertyOptional({ type: [DocDetailDto] })
   @IsOptional()

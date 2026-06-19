@@ -298,26 +298,27 @@ export class DocService {
   /**
    * تغییر وضعیت سند
    */
-  async updateStatus(
-    year: string,
-    id: number,
-    dto: DocStatusUpdateDto,
-    userId: number,
-  ): Promise<void> {
-    const ds = await this.dsManager.getDataSource(year);
-    const repo = ds.getRepository(DocMaster);
+ async updateStatus(
+  year: string,
+  id: number,
+  dto: DocStatusUpdateDto,
+  userId: number,
+): Promise<void> {
+  const ds = await this.dsManager.getDataSource(year);
+  const repo = ds.getRepository(DocMaster);
 
-    const master = await repo.findOne({ where: { id } });
-    if (!master) {
-      throw new NotFoundException(`سند ${id} یافت نشد`);
-    }
-
-    master.status = dto.status;
-    master.uui = userId;
-    master.udt = new Date();
-
-    await repo.save(master);
+  const master = await repo.findOne({ where: { id } });
+  if (!master) {
+    throw new NotFoundException(`سند ${id} یافت نشد`);
   }
+
+  master.status = dto.status;
+  master.uui = userId;
+  master.udt = new Date();
+
+  await repo.save(master);
+}
+
 
   /**
    * دریافت توضیحات از tbl_acc_doc_desc
