@@ -1,4 +1,4 @@
-// apps/api/src/entities/doc-detail.entity.ts
+// apps/api/src/database/entities/financial/doc-detail.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -9,7 +9,7 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
-import { DocMaster } from './doc-master.entity';
+import { DocMaster } from '../financial/doc-master.entity';
 import { Coa } from './coa.entity';
 
 @Entity('tbl_acc_doc_detail')
@@ -81,11 +81,11 @@ export class DocDetail {
 
   // کاربر لغوکننده
   @Column({ name: 'cancelui', type: 'int', nullable: true })
-  cancelUserId: number;
+  cancelui: number;
 
   // تاریخ لغو
   @Column({ name: 'canceldt', type: 'timestamp', nullable: true })
-  cancelAt: Date;
+  canceldt: Date;
 
   // حذف منطقی
   @Column({ type: 'bit', nullable: true })
@@ -93,27 +93,29 @@ export class DocDetail {
 
   // Audit Trail - ایجاد
   @Column({ name: 'cui', type: 'int' })
-  createdUserId: number;
+  cui: number;
 
   @CreateDateColumn({ name: 'cdt', type: 'timestamp' })
-  createdAt: Date;
+  cdt: Date;
 
   // Audit Trail - ویرایش
   @Column({ name: 'uui', type: 'int', nullable: true })
-  updatedUserId: number;
+  uui: number;
 
   @UpdateDateColumn({ name: 'udt', type: 'timestamp', nullable: true })
-  updatedAt: Date;
+  udt: Date;
 
   // Audit Trail - حذف
   @Column({ name: 'dui', type: 'int', nullable: true })
-  deletedUserId: number;
+  dui: number;
 
   @Column({ name: 'ddt', type: 'timestamp', nullable: true })
-  deletedAt: Date;
+  ddt: Date;
 
   // روابط
-  @ManyToOne('DocMaster', 'details')
+  @ManyToOne(() => DocMaster, (master) => master.details, { 
+    onDelete: 'CASCADE' 
+  })
   @JoinColumn({ name: 'master_id' })
   docMaster: DocMaster;
 

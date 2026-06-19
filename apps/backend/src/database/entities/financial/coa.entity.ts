@@ -1,3 +1,5 @@
+// apps/api/src/database/entities/financial/coa.entity.ts
+
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 @Entity("tbl_coa")

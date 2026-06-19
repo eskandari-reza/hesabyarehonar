@@ -1,4 +1,4 @@
-// apps/api/src/entities/doc-desc.entity.ts
+// apps/api/src/database/entities/financial/doc-desc.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,

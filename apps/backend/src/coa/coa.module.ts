@@ -1,7 +1,11 @@
+// apps/api/src/coa/coa.module.ts
+
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CoaController } from './coa.controller';
 import { CoaService } from './coa.service';
+import { DocController } from './doc.controller';
+import { DocService } from './doc.service';
 import { DataSourceManager } from '../database/data-source-manager.service';
 import { Year } from '../database/entities/global/year.entity';
 import { Coa } from '../database/entities/financial/coa.entity';
@@ -13,9 +17,10 @@ import { DocDesc } from '../database/entities/financial/doc-desc.entity';
   imports: [
     TypeOrmModule.forFeature([Year]),
   ],
-  controllers: [CoaController],
+  controllers: [CoaController, DocController],
   providers: [
     CoaService,
+    DocService,
     {
       provide: DataSourceManager,
       useFactory: () => {
@@ -29,6 +34,6 @@ import { DocDesc } from '../database/entities/financial/doc-desc.entity';
       },
     },
   ],
-  exports: [CoaService, DataSourceManager],
+  exports: [CoaService, DocService, DataSourceManager],
 })
 export class CoaModule {}

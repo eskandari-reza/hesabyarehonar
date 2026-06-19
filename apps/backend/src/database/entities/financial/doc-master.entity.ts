@@ -1,4 +1,4 @@
-// apps/api/src/entities/doc-master.entity.ts
+// apps/api/src/database/entities/financial/doc-master.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -75,26 +75,26 @@ export class DocMaster {
 
   // Audit Trail - ایجاد
   @Column({ name: 'cui', type: 'int' })
-  createdUserId: number;
+  cui: number;
 
   @CreateDateColumn({ name: 'cdt', type: 'timestamp' })
-  createdAt: Date;
+  cdt: Date;
 
   // Audit Trail - ویرایش
   @Column({ name: 'uui', type: 'int', nullable: true })
-  updatedUserId: number;
+  uui: number;
 
   @UpdateDateColumn({ name: 'udt', type: 'timestamp', nullable: true })
-  updatedAt: Date;
+  udt: Date;
 
   // Audit Trail - حذف
   @Column({ name: 'dui', type: 'int', nullable: true })
-  deletedUserId: number;
+  dui: number;
 
   @Column({ name: 'ddt', type: 'timestamp', nullable: true })
-  deletedAt: Date;
+  ddt: Date;
 
   // روابط
-  @OneToMany('DocDetail', 'docMaster', { cascade: true })
+  @OneToMany(() => DocDetail, (detail) => detail.docMaster, { cascade: true })
   details: DocDetail[];
 }

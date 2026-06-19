@@ -1,8 +1,6 @@
 // apps/backend/src/global/database/database.module.ts
 import { Module, Global } from '@nestjs/common';
 import { DataSourceManager } from '../data-source-manager.service';
-// لیست entityهای مشترک دیتابیس‌های سال مالی را ایمپورت کن
-// import { ChartOfAccount } from '...';
 import { WindowsSetting } from './financial/windows-setting.entity';
 import { WeeklyDiscount } from './financial/weekly-discount.entity';
 import { VatGp } from './financial/vat-gp.entity';
@@ -17,31 +15,36 @@ import { ShowDeleteForm } from './financial/show-delete-form.entity';
 import { Sms } from './financial/sms.entity';
 import { DocMaster } from './financial/doc-master.entity';
 import { DocDetail } from './financial/doc-detail.entity';
+import { DocDesc } from './financial/doc-desc.entity';
+import { Coa } from './financial/coa.entity';
+import { CoaGp } from './financial/coa-gp.entity';
 
 export const FINANCIAL_YEAR_ENTITIES = [
-  WindowsSetting,//
-  WeeklyDiscount,//
-  VatGp,//
-  UserPermission,//
-  UserPerformance,//
-  UserGp,//
-  UserAccess,//
-  User,//
-  TaxGp,//
-  SmsMessage,//
-  User,//
-  Sms,//
-  ShowDeleteForm,//
+  WindowsSetting,
+  WeeklyDiscount,
+  VatGp,
+  UserPermission,
+  UserPerformance,
+  UserGp,
+  UserAccess,
+  User,
+  TaxGp,
+  SmsMessage,
+  Sms,
+  ShowDeleteForm,
+  DocMaster,
+  DocDetail,
+  DocDesc,
+  Coa,
+  CoaGp,
 ];
+
 @Global()
 @Module({
   providers: [
     {
       provide: DataSourceManager,
-      useFactory: () =>
-        new DataSourceManager([
-          // ChartOfAccount, ...
-        ]),
+      useFactory: () => new DataSourceManager(FINANCIAL_YEAR_ENTITIES),
     },
   ],
   exports: [DataSourceManager],

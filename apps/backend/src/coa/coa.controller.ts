@@ -1,3 +1,5 @@
+// apps/api/src/coa/coa.controller.ts
+
 import { Controller, Get, Param, UseGuards, Req, ParseIntPipe } from '@nestjs/common';
 import { CoaService } from './coa.service';
 import { FinancialYearGuard } from '../guards/financial-year.guard';
