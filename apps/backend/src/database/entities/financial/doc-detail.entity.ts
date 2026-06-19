@@ -21,75 +21,75 @@ export class DocDetail {
 
   // ارجاع به سند اصلی
   @Column({ name: 'master_id', type: 'int', nullable: true })
-  masterId: number;
+  masterId: number | null;
 
   // نوع سند
   @Column({ name: 'doc_type', type: 'varchar', length: 50, nullable: true })
-  docType: string;
+  docType: string | null;
 
   // حساب اصلی (تفصیلی سطح ۱)
   @Column({ name: 'coa_id', type: 'int', nullable: true })
-  coaId: number;
+  coaId: number | null;
 
   // تفصیلی سطح ۲
   @Column({ name: 'coa_id1', type: 'int', nullable: true })
-  coaId1: number;
+  coaId1: number | null;
 
   // تفصیلی سطح ۳
   @Column({ name: 'coa_id2', type: 'int', nullable: true })
-  coaId2: number;
+  coaId2: number | null;
 
   // تفصیلی سطح ۴
   @Column({ name: 'coa_id3', type: 'int', nullable: true })
-  coaId3: number;
+  coaId3: number | null;
 
   // شناسه دفتر
   @Column({ name: 'ofc_id', type: 'int', nullable: true })
-  ofcId: number;
+  ofcId: number | null;
 
   // شناسه پروژه
   @Column({ name: 'prj_id', type: 'int', nullable: true })
-  prjId: number;
+  prjId: number | null;
 
   // بدهکار
   @Column({ type: 'decimal', precision: 18, scale: 3, nullable: true })
-  debit: number;
+  debit: number | null;
 
   // بستانکار
   @Column({ type: 'decimal', precision: 18, scale: 3, nullable: true })
-  credit: number;
+  credit: number | null;
 
   // شرح ردیف
   @Column({ type: 'varchar', length: 'max', nullable: true })
-  desc: string;
+  desc: string | null;
 
   // فلگ اصلاحی
   @Column({ name: 'mod_flag', type: 'bit', nullable: true })
-  modFlag: boolean;
+  modFlag: boolean | null;
 
   // شناسه ردیف اصلی
   @Column({ name: 'mod_id', type: 'int', nullable: true })
-  modId: number;
+  modId: number | null;
 
   // شرح اصلاح
   @Column({ name: 'mod_desc', type: 'varchar', length: 'max', nullable: true })
-  modDesc: string;
+  modDesc: string | null;
 
   // لغو شده
   @Column({ type: 'bit', nullable: true })
-  cancel: boolean;
+  cancel: boolean | null;
 
   // کاربر لغوکننده
   @Column({ name: 'cancelui', type: 'int', nullable: true })
-  cancelui: number;
+  cancelui: number | null;
 
   // تاریخ لغو
   @Column({ name: 'canceldt', type: 'timestamp', nullable: true })
-  canceldt: Date;
+  canceldt: Date | null;
 
   // حذف منطقی
   @Column({ type: 'bit', nullable: true })
-  del: boolean;
+  del: boolean | null;
 
   // Audit Trail - ایجاد
   @Column({ name: 'cui', type: 'int' })
@@ -100,38 +100,38 @@ export class DocDetail {
 
   // Audit Trail - ویرایش
   @Column({ name: 'uui', type: 'int', nullable: true })
-  uui: number;
+  uui: number | null;
 
   @UpdateDateColumn({ name: 'udt', type: 'timestamp', nullable: true })
-  udt: Date;
+  udt: Date | null;
 
   // Audit Trail - حذف
   @Column({ name: 'dui', type: 'int', nullable: true })
-  dui: number;
+  dui: number | null;
 
   @Column({ name: 'ddt', type: 'timestamp', nullable: true })
-  ddt: Date;
+  ddt: Date | null;
 
   // روابط
-  @ManyToOne(() => DocMaster, (master) => master.details, { 
-    onDelete: 'CASCADE' 
+  @ManyToOne(() => DocMaster, (master) => master.details, {
+    onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'master_id' })
   docMaster: DocMaster;
 
   @ManyToOne(() => Coa, { nullable: true })
   @JoinColumn({ name: 'coa_id' })
-  coa: Coa;
+  coa: Coa | null;
 
   @ManyToOne(() => Coa, { nullable: true })
   @JoinColumn({ name: 'coa_id1' })
-  coa1: Coa;
+  coa1: Coa | null;
 
   @ManyToOne(() => Coa, { nullable: true })
   @JoinColumn({ name: 'coa_id2' })
-  coa2: Coa;
+  coa2: Coa | null;
 
   @ManyToOne(() => Coa, { nullable: true })
   @JoinColumn({ name: 'coa_id3' })
-  coa3: Coa;
+  coa3: Coa | null;
 }

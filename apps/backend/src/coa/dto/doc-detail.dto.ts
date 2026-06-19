@@ -57,22 +57,22 @@ export class CreateDocDetailDto {
 
 export class DocDetailDto {
   id: number;
-  masterId: number;
-  docType: string;
-  coaId: number;
-  coaId1: number;
-  coaId2: number;
-  coaId3: number;
-  ofcId: number;
-  prjId: number;
-  debit: number;
-  credit: number;
-  desc: string;
-  modFlag: boolean;
-  modId: number;
-  modDesc: string;
-  cancel: boolean;
-  
+  masterId: number | null;
+  docType: string | null;
+  coaId: number | null;
+  coaId1: number | null;
+  coaId2: number | null;
+  coaId3: number | null;
+  ofcId: number | null;
+  prjId: number | null;
+  debit: number | null;
+  credit: number | null;
+  desc: string | null;
+  modFlag: boolean | null;
+  modId: number | null;
+  modDesc: string | null;
+  cancel: boolean | null;
+
   // فیلدهای audit
   cui: number;
   cdt: Date;
