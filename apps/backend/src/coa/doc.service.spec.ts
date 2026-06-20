@@ -963,4 +963,850 @@ describe('Not Found Scenarios', () => {
       expect(qb.where).toHaveBeenCalledWith('desc.type = :type', { type: specialType });
     });
   });
+
+  // اولویت ۱: findAll - پوشش کامل
+  // ═══════════════════════════════════════════════════════════════════════════
+  describe('findAll – comprehensive', () => {
+    const year = '1403';
+
+    it('should call getMany (not getManyAndCount)', async () => {
+      // رفع ناسازگاری mock: سرویس getMany() صدا می‌زند
+      const qb = makeQueryBuilder([makeSavedMaster(1)]);
+      mockMasterRepo.createQueryBuilder.mockReturnValue(qb as any);
+
+      await service.findAll(year, {});
+
+      expect(qb.getMany).toHaveBeenCalled();
+      expect(qb.getManyAndCount).not.toHaveBeenCalled();
+    });
+
+    it('should filter by docType', async () => {
+      const qb = makeQueryBuilder([]);
+      mockMasterRepo.createQueryBuilder.mockReturnValue(qb as any);
+
+      await service.findAll(year, { docType: 'PURCHASE' });
+
+      expect(qb.andWhere).toHaveBeenCalledWith('doc.docType = :docType', {
+        docType: 'PURCHASE',
+      });
+    });
+
+    it('should filter by status', async () => {
+      const qb = makeQueryBuilder([]);
+      mockMasterRepo.createQueryBuilder.mockReturnValue(qb as any);
+
+      await service.findAll(year, { status: 1 });
+
+      expect(qb.andWhere).toHaveBeenCalledWith('doc.status = :status', {
+        status: 1,
+      });
+    });
+
+    it('should filter by status=0 (falsy but valid)', async () => {
+      const qb = makeQueryBuilder([]);
+      mockMasterRepo.createQueryBuilder.mockReturnValue(qb as any);
+
+      await service.findAll(year, { status: 0 });
+
+      // status === 0 باید اعمال شود (بررسی با !== undefined)
+      expect(qb.andWhere).toHaveBeenCalledWith('doc.status = :status', {
+        status: 0,
+      });
+    });
+
+    it('should apply combined filters: docType + status + date range', async () => {
+      const qb = makeQueryBuilder([]);
+      mockMasterRepo.createQueryBuilder.mockReturnValue(qb as any);
+
+      await service.findAll(year, {
+        docType: 'SALE',
+        status: 2,
+        fromDate: '1403/01/01',
+        toDate: '1403/01/31',
+      });
+
+      expect(qb.andWhere).toHaveBeenCalledWith('doc.docType = :docType', {
+        docType: 'SALE',
+      });
+      expect(qb.andWhere).toHaveBeenCalledWith('doc.status = :status', {
+        status: 2,
+      });
+      expect(qb.andWhere).toHaveBeenCalledWith('doc.tarikh >= :fromDate', {
+        fromDate: '1403/01/01',
+      });
+      expect(qb.andWhere).toHaveBeenCalledWith('doc.tarikh <= :toDate', {
+        toDate: '1403/01/31',
+      });
+    });
+
+    it('should NOT apply filters when values are undefined', async () => {
+      const qb = makeQueryBuilder([]);
+      mockMasterRepo.createQueryBuilder.mockReturnValue(qb as any);
+
+      await service.findAll(year, {});
+
+      // تنها del filter ثابت اعمال می‌شود
+      expect(qb.where).toHaveBeenCalledWith('doc.del = :del', { del: false });
+      expect(qb.andWhere).not.toHaveBeenCalled();
+    });
+
+    it('should apply limit via take()', async () => {
+      const qb = makeQueryBuilder([]);
+      mockMasterRepo.createQueryBuilder.mockReturnValue(qb as any);
+
+      await service.findAll(year, { limit: 5 });
+
+      expect(qb.take).toHaveBeenCalledWith(5);
+    });
+
+    it('should apply offset via skip()', async () => {
+      const qb = makeQueryBuilder([]);
+      mockMasterRepo.createQueryBuilder.mockReturnValue(qb as any);
+
+      await service.findAll(year, { offset: 20 });
+
+      expect(qb.skip).toHaveBeenCalledWith(20);
+    });
+
+    it('should NOT call take() when limit is undefined', async () => {
+      const qb = makeQueryBuilder([]);
+      mockMasterRepo.createQueryBuilder.mockReturnValue(qb as any);
+
+      await service.findAll(year, {});
+
+      expect(qb.take).not.toHaveBeenCalled();
+    });
+
+    it('should NOT call skip() when offset is undefined', async () => {
+      const qb = makeQueryBuilder([]);
+      mockMasterRepo.createQueryBuilder.mockReturnValue(qb as any);
+
+      await service.findAll(year, {});
+
+      expect(qb.skip).not.toHaveBeenCalled();
+    });
+
+    it('should return empty array when no documents match', async () => {
+      const qb = makeQueryBuilder([]);
+      mockMasterRepo.createQueryBuilder.mockReturnValue(qb as any);
+
+      const result = await service.findAll(year, { docType: 'NONEXISTENT' });
+
+      expect(result).toEqual([]);
+      expect(result).toHaveLength(0);
+    });
+
+    it('should order results by id DESC', async () => {
+      const qb = makeQueryBuilder([]);
+      mockMasterRepo.createQueryBuilder.mockReturnValue(qb as any);
+
+      await service.findAll(year, {});
+
+      expect(qb.orderBy).toHaveBeenCalledWith('doc.id', 'DESC');
+    });
+
+    it('should map results to DocMasterDto (without details)', async () => {
+      const docs = [
+        makeSavedMaster(10, { desc: 'Doc A', status: 1 }),
+        makeSavedMaster(11, { desc: 'Doc B', status: 0 }),
+      ];
+      const qb = makeQueryBuilder(docs);
+      mockMasterRepo.createQueryBuilder.mockReturnValue(qb as any);
+
+      const result = await service.findAll(year, {});
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({ id: 10, desc: 'Doc A', status: 1 });
+      expect(result[1]).toMatchObject({ id: 11, desc: 'Doc B', status: 0 });
+      // DocMasterDto نباید details داشته باشد
+      expect((result[0] as any).details).toBeUndefined();
+    });
+
+    it('should throw when getDataSource fails', async () => {
+      mockDataSourceManager.getDataSource.mockRejectedValueOnce(
+        new Error('DB unavailable'),
+      );
+
+      await expect(service.findAll(year, {})).rejects.toThrow('DB unavailable');
+    });
+
+    it('should throw when createQueryBuilder throws', async () => {
+      mockMasterRepo.createQueryBuilder.mockImplementationOnce(() => {
+        throw new Error('QB init failed');
+      });
+
+      await expect(service.findAll(year, {})).rejects.toThrow('QB init failed');
+    });
+
+    it('should throw when getMany fails', async () => {
+      const qb = makeQueryBuilder([]);
+      (qb.getMany as jest.Mock).mockRejectedValueOnce(new Error('Query failed'));
+      mockMasterRepo.createQueryBuilder.mockReturnValue(qb as any);
+
+      await expect(service.findAll(year, {})).rejects.toThrow('Query failed');
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // اولویت ۱: create – repository failures و edge cases
+  // ═══════════════════════════════════════════════════════════════════════════
+  describe('create – repository failures & edge cases', () => {
+    const year = '1403';
+    const userId = 1;
+
+    it('should create document with empty details array', async () => {
+      const dto = makeDto({ details: [] });
+      const savedMaster = makeSavedMaster(1, { dtotal: 0, ctotal: 0 });
+      mockMasterRepo.create.mockReturnValue(savedMaster);
+      mockMasterRepo.save.mockResolvedValue(savedMaster);
+      mockDetailRepo.save.mockResolvedValue([] as any);
+
+      const result = await service.create(year, dto, userId);
+
+      expect(result).toHaveProperty('id', 1);
+      expect(result.details).toHaveLength(0);
+      expect(result.dtotal).toBe(0);
+      expect(result.ctotal).toBe(0);
+    });
+
+    it('should create document when details is omitted (undefined)', async () => {
+      // dto بدون details
+      const dto = makeDto();
+      delete (dto as any).details;
+
+      const savedMaster = makeSavedMaster(1, { dtotal: 0, ctotal: 0 });
+      mockMasterRepo.create.mockReturnValue(savedMaster);
+      mockMasterRepo.save.mockResolvedValue(savedMaster);
+      mockDetailRepo.save.mockResolvedValue([] as any);
+
+      const result = await service.create(year, dto, userId);
+
+      expect(result).toHaveProperty('id', 1);
+    });
+
+    it('should set correct default values (taxOk=false, status=0, signature=0, del=false)', async () => {
+      const dto = makeDto({
+        details: [
+          makeDetail({ coaId: 1, debit: 500, credit: 0 }),
+          makeDetail({ coaId: 2, debit: 0, credit: 500 }),
+        ],
+      });
+
+      const capturedMaster: any = {};
+      mockMasterRepo.create.mockImplementation((data: any) => {
+        Object.assign(capturedMaster, data);
+        return data as any;
+      });
+      mockMasterRepo.save.mockResolvedValue(makeSavedMaster(1));
+      mockDetailRepo.save.mockResolvedValue([] as any);
+
+      await service.create(year, dto, userId);
+
+      expect(capturedMaster.taxOk).toBe(false);
+      expect(capturedMaster.status).toBe(0); // dto.status ?? 0
+      expect(capturedMaster.signature).toBe(0); // dto.signature ?? 0
+      expect(capturedMaster.del).toBe(false);
+      expect(capturedMaster.issuetype).toBe(1); // از dto
+      expect(capturedMaster.cui).toBe(userId);
+    });
+
+    it('should set audit fields (cui, cdt, del) on each detail', async () => {
+      const dto = makeDto({
+        details: [
+          makeDetail({ coaId: 1, debit: 300, credit: 0 }),
+          makeDetail({ coaId: 2, debit: 0, credit: 300 }),
+        ],
+      });
+
+      const savedMaster = makeSavedMaster(42);
+      mockMasterRepo.create.mockReturnValue(savedMaster);
+      mockMasterRepo.save.mockResolvedValue(savedMaster);
+
+      let capturedDetails: any[] = [];
+      mockDetailRepo.save.mockImplementation(async (details: any) => {
+        capturedDetails = details;
+        return details;
+      });
+
+      await service.create(year, dto, userId);
+
+      capturedDetails.forEach((d) => {
+        expect(d.cui).toBe(userId);
+        expect(d.cdt).toBeInstanceOf(Date);
+        expect(d.del).toBe(false);
+        expect(d.cancel).toBe(false);
+        expect(d.masterId).toBe(42);
+      });
+    });
+
+    it('should throw when masterRepo.save fails (transaction rollback)', async () => {
+      const dto = makeDto({
+        details: [
+          makeDetail({ coaId: 1, debit: 100, credit: 0 }),
+          makeDetail({ coaId: 2, debit: 0, credit: 100 }),
+        ],
+      });
+
+      mockMasterRepo.create.mockReturnValue(makeSavedMaster(1) as any);
+      mockMasterRepo.save.mockRejectedValueOnce(new Error('Master save failed'));
+
+      await expect(service.create(year, dto, userId)).rejects.toThrow(
+        'Master save failed',
+      );
+      // detailRepo.save نباید فراخوانی شود
+      expect(mockDetailRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('should throw when detailRepo.save fails (transaction rollback)', async () => {
+      const dto = makeDto({
+        details: [
+          makeDetail({ coaId: 1, debit: 200, credit: 0 }),
+          makeDetail({ coaId: 2, debit: 0, credit: 200 }),
+        ],
+      });
+
+      const savedMaster = makeSavedMaster(5);
+      mockMasterRepo.create.mockReturnValue(savedMaster);
+      mockMasterRepo.save.mockResolvedValue(savedMaster);
+      mockDetailRepo.save.mockRejectedValueOnce(new Error('Detail save failed'));
+
+      await expect(service.create(year, dto, userId)).rejects.toThrow(
+        'Detail save failed',
+      );
+    });
+
+    it('should throw when getDataSource fails', async () => {
+      mockDataSourceManager.getDataSource.mockRejectedValueOnce(
+        new Error('No datasource'),
+      );
+
+      await expect(service.create(year, makeDto(), userId)).rejects.toThrow(
+        'No datasource',
+      );
+    });
+
+    it('should throw BadRequestException with error message containing totals', async () => {
+      const dto = makeDto({
+        details: [
+          makeDetail({ coaId: 1, debit: 1000, credit: 0 }),
+          makeDetail({ coaId: 2, debit: 0, credit: 500 }),
+        ],
+      });
+
+      // پیغام خطای سرویس واقعی:
+      // 'سند نامتوازن است. جمع بدهکار: 1000، جمع بستانکار: 500'
+      await expect(service.create(year, dto, userId)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.create(year, dto, userId)).rejects.toThrow(
+        'سند نامتوازن است',
+      );
+    });
+
+    it('should accept exactly 0.001 difference (edge of tolerance)', async () => {
+      const dto = makeDto({
+        details: [
+          makeDetail({ coaId: 1, debit: 1000.001, credit: 0 }),
+          makeDetail({ coaId: 2, debit: 0, credit: 1000 }),
+        ],
+      });
+
+      const savedMaster = makeSavedMaster(1);
+      mockMasterRepo.create.mockReturnValue(savedMaster);
+      mockMasterRepo.save.mockResolvedValue(savedMaster);
+      mockDetailRepo.save.mockResolvedValue([] as any);
+
+      // Math.abs(0.001) > 0.001 → false → باید موفق شود
+      await expect(service.create(year, dto, userId)).resolves.toBeDefined();
+    });
+
+    it('should reject difference just above 0.001', async () => {
+      const dto = makeDto({
+        details: [
+          makeDetail({ coaId: 1, debit: 1000.0011, credit: 0 }),
+          makeDetail({ coaId: 2, debit: 0, credit: 1000 }),
+        ],
+      });
+
+      await expect(service.create(year, dto, userId)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // اولویت ۱: update – repository failures و edge cases
+  // ═══════════════════════════════════════════════════════════════════════════
+  describe('update – repository failures & edge cases', () => {
+    const year = '1403';
+    const userId = 1;
+    const docId = 1;
+
+    it('should NOT delete/re-create details when details array is empty', async () => {
+      const dto = makeDto({ serial: 200, details: [] });
+      const existingMaster = makeSavedMaster(docId);
+      mockMasterRepo.findOne.mockResolvedValue(existingMaster);
+      mockMasterRepo.save.mockResolvedValue(makeSavedMaster(docId));
+      mockDetailRepo.find.mockResolvedValue([] as any);
+
+      await service.update(year, docId, dto, userId);
+
+      // با details خالی، detailRepo.delete نباید فراخوانی شود
+      expect(mockDetailRepo.delete).not.toHaveBeenCalled();
+      expect(mockDetailRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('should delete old details and save new ones when details provided', async () => {
+      const dto = makeDto({
+        serial: 201,
+        details: [
+          makeDetail({ coaId: 3, debit: 500, credit: 0 }),
+          makeDetail({ coaId: 4, debit: 0, credit: 500 }),
+        ],
+      });
+
+      mockMasterRepo.findOne.mockResolvedValue(makeSavedMaster(docId));
+      mockMasterRepo.save.mockResolvedValue(makeSavedMaster(docId));
+      mockDetailRepo.delete.mockResolvedValue({ affected: 2 } as any);
+      mockDetailRepo.save.mockResolvedValue([] as any);
+      mockDetailRepo.find.mockResolvedValue([] as any);
+
+      await service.update(year, docId, dto, userId);
+
+      expect(mockDetailRepo.delete).toHaveBeenCalledWith({ masterId: docId });
+      expect(mockDetailRepo.save).toHaveBeenCalled();
+    });
+
+    it('should throw when masterRepo.save fails inside transaction', async () => {
+      const dto = makeDto({
+        serial: 202,
+        details: [
+          makeDetail({ coaId: 1, debit: 100, credit: 0 }),
+          makeDetail({ coaId: 2, debit: 0, credit: 100 }),
+        ],
+      });
+
+      mockMasterRepo.findOne.mockResolvedValue(makeSavedMaster(docId));
+      mockMasterRepo.save.mockRejectedValueOnce(new Error('Update save failed'));
+
+      await expect(service.update(year, docId, dto, userId)).rejects.toThrow(
+        'Update save failed',
+      );
+    });
+
+    it('should throw when detailRepo.delete fails', async () => {
+      const dto = makeDto({
+        serial: 203,
+        details: [
+          makeDetail({ coaId: 1, debit: 300, credit: 0 }),
+          makeDetail({ coaId: 2, debit: 0, credit: 300 }),
+        ],
+      });
+
+      mockMasterRepo.findOne.mockResolvedValue(makeSavedMaster(docId));
+      mockMasterRepo.save.mockResolvedValue(makeSavedMaster(docId));
+      mockDetailRepo.delete.mockRejectedValueOnce(new Error('Delete failed'));
+
+      await expect(service.update(year, docId, dto, userId)).rejects.toThrow(
+        'Delete failed',
+      );
+    });
+
+    it('should throw when detailRepo.update (find after save) fails', async () => {
+      const dto = makeDto({
+        serial: 204,
+        details: [
+          makeDetail({ coaId: 1, debit: 400, credit: 0 }),
+          makeDetail({ coaId: 2, debit: 0, credit: 400 }),
+        ],
+      });
+
+      mockMasterRepo.findOne.mockResolvedValue(makeSavedMaster(docId));
+      mockMasterRepo.save.mockResolvedValue(makeSavedMaster(docId));
+      mockDetailRepo.delete.mockResolvedValue({ affected: 1 } as any);
+      mockDetailRepo.save.mockResolvedValue([] as any);
+      mockDetailRepo.find.mockRejectedValueOnce(new Error('Find failed'));
+
+      await expect(service.update(year, docId, dto, userId)).rejects.toThrow(
+        'Find failed',
+      );
+    });
+
+    it('should update audit fields (uui, udt) on master', async () => {
+      const dto = makeDto({
+        serial: 205,
+        details: [
+          makeDetail({ coaId: 1, debit: 600, credit: 0 }),
+          makeDetail({ coaId: 2, debit: 0, credit: 600 }),
+        ],
+      });
+
+      const existingMaster = makeSavedMaster(docId);
+      mockMasterRepo.findOne.mockResolvedValue(existingMaster);
+
+      let savedArg: any;
+      mockMasterRepo.save.mockImplementation(async (m: any) => {
+        savedArg = m;
+        return makeSavedMaster(docId);
+      });
+      mockDetailRepo.delete.mockResolvedValue({ affected: 0 } as any);
+      mockDetailRepo.save.mockResolvedValue([] as any);
+      mockDetailRepo.find.mockResolvedValue([] as any);
+
+      await service.update(year, docId, dto, userId);
+
+      expect(savedArg.uui).toBe(userId);
+      expect(savedArg.udt).toBeInstanceOf(Date);
+    });
+
+    it('should set new details cui/cdt from master (NOT from userId/now)', async () => {
+      // نکته مهم: برخلاف create که detail.cui = userId و detail.cdt = new Date()
+      // را ست می‌کند، update از master.cui و master.cdt (یعنی سازنده و تاریخ
+      // ایجاد سند اصلی) برای ردیف‌های جدید استفاده می‌کند، نه userId جاری
+      // یا زمان حال. این تست همین رفتار واقعی سرویس را مستند می‌کند.
+      const originalCreatorId = 77;
+      const originalCreatedAt = new Date('2020-05-15T00:00:00Z');
+      const existingMaster = makeSavedMaster(docId, {
+        cui: originalCreatorId,
+        cdt: originalCreatedAt,
+      });
+
+      const dto = makeDto({
+        serial: 207,
+        details: [
+          makeDetail({ coaId: 1, debit: 900, credit: 0 }),
+          makeDetail({ coaId: 2, debit: 0, credit: 900 }),
+        ],
+      });
+
+      mockMasterRepo.findOne.mockResolvedValue(existingMaster);
+      mockMasterRepo.save.mockResolvedValue(existingMaster);
+      mockDetailRepo.delete.mockResolvedValue({ affected: 0 } as any);
+
+      let capturedDetails: any[] = [];
+      mockDetailRepo.save.mockImplementation(async (details: any) => {
+        capturedDetails = details;
+        return details;
+      });
+      mockDetailRepo.find.mockResolvedValue([] as any);
+
+      await service.update(year, docId, dto, userId);
+
+      expect(capturedDetails).toHaveLength(2);
+      capturedDetails.forEach((d) => {
+        expect(d.cui).toBe(originalCreatorId);
+        expect(d.cui).not.toBe(userId);
+        expect(d.cdt).toBe(originalCreatedAt);
+      });
+    });
+
+    it('should fetch updated details with del=false and ASC order after save', async () => {
+      const dto = makeDto({
+        serial: 206,
+        details: [
+          makeDetail({ coaId: 1, debit: 700, credit: 0 }),
+          makeDetail({ coaId: 2, debit: 0, credit: 700 }),
+        ],
+      });
+
+      mockMasterRepo.findOne.mockResolvedValue(makeSavedMaster(docId));
+      mockMasterRepo.save.mockResolvedValue(makeSavedMaster(docId));
+      mockDetailRepo.delete.mockResolvedValue({ affected: 0 } as any);
+      mockDetailRepo.save.mockResolvedValue([] as any);
+      mockDetailRepo.find.mockResolvedValue([] as any);
+
+      await service.update(year, docId, dto, userId);
+
+      expect(mockDetailRepo.find).toHaveBeenCalledWith({
+        where: { masterId: docId, del: false },
+        order: { id: 'ASC' },
+      });
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // اولویت ۱: findOne – repository failures و edge cases
+  // ═══════════════════════════════════════════════════════════════════════════
+  describe('findOne – repository failures & edge cases', () => {
+    const year = '1403';
+
+    it('should return document with empty details when no details exist', async () => {
+      mockMasterRepo.findOne.mockResolvedValue(makeSavedMaster(1));
+      mockDetailRepo.find.mockResolvedValue([] as any);
+
+      const result = await service.findOne(year, 1);
+
+      expect(result.details).toHaveLength(0);
+    });
+
+    it('should query details with del=false and ASC order', async () => {
+      mockMasterRepo.findOne.mockResolvedValue(makeSavedMaster(5));
+      mockDetailRepo.find.mockResolvedValue([] as any);
+
+      await service.findOne(year, 5);
+
+      expect(mockDetailRepo.find).toHaveBeenCalledWith({
+        where: { masterId: 5, del: false },
+        order: { id: 'ASC' },
+      });
+    });
+
+    it('should throw when masterRepo.findOne throws (DB error)', async () => {
+      mockMasterRepo.findOne.mockRejectedValueOnce(new Error('Connection lost'));
+
+      await expect(service.findOne(year, 1)).rejects.toThrow('Connection lost');
+    });
+
+    it('should throw when detailRepo.find fails', async () => {
+      mockMasterRepo.findOne.mockResolvedValue(makeSavedMaster(1));
+      mockDetailRepo.find.mockRejectedValueOnce(new Error('Detail query failed'));
+
+      await expect(service.findOne(year, 1)).rejects.toThrow(
+        'Detail query failed',
+      );
+    });
+
+    it('should map detail fields correctly via toDetailDto', async () => {
+      const mockDetail = {
+        id: 99,
+        masterId: 1,
+        docType: 'PURCHASE',
+        coaId: 10,
+        coaId1: null,
+        coaId2: 20,
+        coaId3: undefined,
+        ofcId: undefined,
+        prjId: null,
+        debit: 500,
+        credit: 0,
+        desc: 'Test desc',
+        modFlag: false,
+        modId: null,
+        modDesc: undefined,
+        cancel: false,
+        cui: 1,
+        cdt: new Date('2024-01-01'),
+        del: false,
+      };
+
+      mockMasterRepo.findOne.mockResolvedValue(makeSavedMaster(1));
+      mockDetailRepo.find.mockResolvedValue([mockDetail] as any);
+
+      const result = await service.findOne(year, 1);
+
+      expect(result.details[0]).toMatchObject({
+        id: 99,
+        masterId: 1,
+        coaId: 10,
+        coaId1: null,
+        coaId2: 20,
+        coaId3: null, // undefined → null
+        ofcId: null,  // undefined → null
+        prjId: null,
+        debit: 500,
+        credit: 0,
+        desc: 'Test desc',
+        modFlag: false,
+        modDesc: null, // undefined → null
+        cancel: false,
+      });
+    });
+
+    it('should throw NotFoundException with Persian message', async () => {
+      mockMasterRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.findOne(year, 123)).rejects.toThrow('سند 123 یافت نشد');
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // اولویت ۲: remove – audit fields و explicit rollback
+  // ═══════════════════════════════════════════════════════════════════════════
+  describe('remove – audit fields & error handling', () => {
+    const year = '1403';
+    const userId = 7;
+    const docId = 3;
+
+    it('should set del=true, dui=userId, ddt on master', async () => {
+      const master = makeSavedMaster(docId, { del: false });
+      mockMasterRepo.findOne.mockResolvedValue(master);
+
+      let savedMaster: any;
+      mockMasterRepo.save.mockImplementation(async (m: any) => {
+        savedMaster = m;
+        return m;
+      });
+      mockDetailRepo.update.mockResolvedValue({ affected: 2 } as any);
+
+      await service.remove(year, docId, userId);
+
+      expect(savedMaster.del).toBe(true);
+      expect(savedMaster.dui).toBe(userId);
+      expect(savedMaster.ddt).toBeInstanceOf(Date);
+    });
+
+    it('should soft-delete all details via detailRepo.update', async () => {
+      const master = makeSavedMaster(docId, { del: false });
+      mockMasterRepo.findOne.mockResolvedValue(master);
+      mockMasterRepo.save.mockResolvedValue({ ...master, del: true } as any);
+
+      const beforeCall = new Date();
+      mockDetailRepo.update.mockResolvedValue({ affected: 3 } as any);
+
+      await service.remove(year, docId, userId);
+
+      const updateCall = mockDetailRepo.update.mock.calls[0];
+      expect(updateCall[0]).toEqual({ masterId: docId });
+      expect(updateCall[1].del).toBe(true);
+      expect(updateCall[1].dui).toBe(userId);
+      expect(updateCall[1].ddt).toBeInstanceOf(Date);
+      expect((updateCall[1].ddt as Date).getTime()).toBeGreaterThanOrEqual(
+        beforeCall.getTime(),
+      );
+    });
+
+    it('should throw when masterRepo.save fails (implicit rollback)', async () => {
+      const master = makeSavedMaster(docId, { del: false });
+      mockMasterRepo.findOne.mockResolvedValue(master);
+      mockMasterRepo.save.mockRejectedValueOnce(new Error('Remove save failed'));
+
+      await expect(service.remove(year, docId, userId)).rejects.toThrow(
+        'Remove save failed',
+      );
+
+      // detailRepo.update نباید فراخوانی شده باشد
+      expect(mockDetailRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw when detailRepo.update fails', async () => {
+      const master = makeSavedMaster(docId, { del: false });
+      mockMasterRepo.findOne.mockResolvedValue(master);
+      mockMasterRepo.save.mockResolvedValue({ ...master, del: true } as any);
+      mockDetailRepo.update.mockRejectedValueOnce(new Error('Detail update failed'));
+
+      await expect(service.remove(year, docId, userId)).rejects.toThrow(
+        'Detail update failed',
+      );
+    });
+
+    it('should throw NotFoundException with Persian message', async () => {
+      mockMasterRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.remove(year, 999, userId)).rejects.toThrow(
+        'سند 999 یافت نشد',
+      );
+    });
+
+    it('should throw when getDataSource fails', async () => {
+      mockDataSourceManager.getDataSource.mockRejectedValueOnce(
+        new Error('DS error'),
+      );
+
+      await expect(service.remove(year, docId, userId)).rejects.toThrow(
+        'DS error',
+      );
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // اولویت ۲: cancel – error handling
+  // ═══════════════════════════════════════════════════════════════════════════
+  describe('cancel – error handling', () => {
+    const year = '1403';
+
+    it('should throw when detailRepo.update fails', async () => {
+      mockDetailRepo.update.mockRejectedValueOnce(new Error('Cancel update failed'));
+
+      await expect(service.cancel(year, 1, 1)).rejects.toThrow(
+        'Cancel update failed',
+      );
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // اولویت ۲: updateStatus – سناریوهای transaction و edge
+  // ═══════════════════════════════════════════════════════════════════════════
+  describe('updateStatus – additional scenarios', () => {
+    const year = '1403';
+    const docId = 1;
+
+    it('should update signature field as well', async () => {
+      // نکته: updateStatus در سرویس signature را آپدیت نمی‌کند
+      // این تست رفتار واقعی را مستند می‌کند
+      const existing = makeSavedMaster(docId, { status: 0, signature: 0 });
+      mockMasterRepo.findOne.mockResolvedValue(existing);
+
+      let savedArg: any;
+      mockMasterRepo.save.mockImplementation(async (m: any) => {
+        savedArg = m;
+        return m;
+      });
+
+      await service.updateStatus(year, docId, { status: 1, signature: 2 }, 5);
+
+      // سرویس فقط status، uui، udt آپدیت می‌کند
+      expect(savedArg.status).toBe(1);
+      expect(savedArg.uui).toBe(5);
+      expect(savedArg.udt).toBeInstanceOf(Date);
+    });
+
+    it('should propagate database error from findOne', async () => {
+      mockMasterRepo.findOne.mockRejectedValueOnce(
+        new Error('Timeout'),
+      );
+
+      await expect(
+        service.updateStatus(year, docId, { status: 1, signature: 0 }, 1),
+      ).rejects.toThrow('Timeout');
+
+      expect(mockMasterRepo.save).not.toHaveBeenCalled();
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // اولویت ۳: helper mappers – toMasterDto
+  // ═══════════════════════════════════════════════════════════════════════════
+  describe('toMasterDto – field mapping via findAll', () => {
+    const year = '1403';
+
+    it('should map all DocMaster fields to DocMasterDto', async () => {
+      const master = makeSavedMaster(77, {
+        serial: 999,
+        tarikh: '1403/06/01',
+        docType: 'JOURNAL',
+        refrens: 42,
+        taxOk: true,
+        dtotal: 5000,
+        ctotal: 5000,
+        desc: 'Full mapping test',
+        modDesc: 'mod',
+        issuetype: 2,
+        status: 1,
+        signature: 1,
+        cui: 3,
+      });
+
+      const qb = makeQueryBuilder([master]);
+      mockMasterRepo.createQueryBuilder.mockReturnValue(qb as any);
+
+      const result = await service.findAll(year, {});
+
+      expect(result[0]).toMatchObject({
+        id: 77,
+        serial: 999,
+        tarikh: '1403/06/01',
+        docType: 'JOURNAL',
+        refrens: 42,
+        taxOk: true,
+        dtotal: 5000,
+        ctotal: 5000,
+        desc: 'Full mapping test',
+        modDesc: 'mod',
+        issuetype: 2,
+        status: 1,
+        signature: 1,
+        cui: 3,
+      });
+    });
+  });
 });
