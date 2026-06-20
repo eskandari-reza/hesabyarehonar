@@ -5,8 +5,10 @@ import { DocMaster } from '../database/entities/financial/doc-master.entity';
 import { DocDetail } from '../database/entities/financial/doc-detail.entity';
 import { DocDesc } from '../database/entities/financial/doc-desc.entity';
 import { DataSource, Repository, EntityManager } from 'typeorm';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, ExecutionContext } from '@nestjs/common';
 import { CreateDocMasterDto, DocStatusUpdateDto } from './dto/doc-master.dto';
+import { FinancialYearGuard } from '../guards/financial-year.guard';
+import { Year } from '../database/entities/global/year.entity';
 
 describe('DocService', () => {
   let service: DocService;
@@ -1806,6 +1808,374 @@ describe('Not Found Scenarios', () => {
         status: 1,
         signature: 1,
         cui: 3,
+      });
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// acct.datasource.ts فقط یک DataSource instance ساده export می‌کند.
+// چون مقداردهی آن در سطح ماژول (module-level) و در لحظه import اتفاق
+// می‌افتد، برای تست رفتار fallback متغیرهای محیطی باید هر بار قبل از
+// require کردن ماژول، env را تنظیم و jest.resetModules() را صدا بزنیم.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('AcctDataSource', () => {
+  const ORIGINAL_ENV = process.env;
+
+  beforeEach(() => {
+    jest.resetModules();
+    process.env = { ...ORIGINAL_ENV };
+    delete process.env.DB_HOST;
+    delete process.env.DB_PORT;
+    delete process.env.DB_USERNAME;
+    delete process.env.DB_PASSWORD;
+  });
+
+  afterAll(() => {
+    process.env = ORIGINAL_ENV;
+  });
+
+  describe('default configuration (no env vars set)', () => {
+    it('should export a DataSource instance', () => {
+      const { AcctDataSource } = require('../global/database/acct.datasource');
+      const { DataSource } = require('typeorm');
+      expect(AcctDataSource).toBeInstanceOf(DataSource);
+    });
+
+    it('should default to postgres type', () => {
+      const { AcctDataSource } = require('../global/database/acct.datasource');
+      expect(AcctDataSource.options.type).toBe('postgres');
+    });
+
+    it('should default host to localhost', () => {
+      const { AcctDataSource } = require('../global/database/acct.datasource');
+      expect((AcctDataSource.options as any).host).toBe('localhost');
+    });
+
+    it('should default port to 5433', () => {
+      const { AcctDataSource } = require('../global/database/acct.datasource');
+      expect((AcctDataSource.options as any).port).toBe(5433);
+    });
+
+    it('should default username to postgres', () => {
+      const { AcctDataSource } = require('../global/database/acct.datasource');
+      expect((AcctDataSource.options as any).username).toBe('postgres');
+    });
+
+    it('should default password to empty string', () => {
+      const { AcctDataSource } = require('../global/database/acct.datasource');
+      expect((AcctDataSource.options as any).password).toBe('');
+    });
+
+    it('should always use database name "Accanting_Data"', () => {
+      const { AcctDataSource } = require('../global/database/acct.datasource');
+      expect((AcctDataSource.options as any).database).toBe('Accanting_Data');
+    });
+
+    it('should set synchronize to false', () => {
+      const { AcctDataSource } = require('../global/database/acct.datasource');
+      expect(AcctDataSource.options.synchronize).toBe(false);
+    });
+
+    it('should register exactly Year and Company entities', () => {
+      const { AcctDataSource } = require('../global/database/acct.datasource');
+      const { Year } = require('../global/database/year.entity');
+      const { Company } = require('../global/database/company.entity');
+
+      const entities = AcctDataSource.options.entities as any[];
+      expect(entities).toHaveLength(2);
+      expect(entities).toContain(Year);
+      expect(entities).toContain(Company);
+    });
+  });
+
+  describe('environment variable overrides', () => {
+    it('should use DB_HOST when set', () => {
+      process.env.DB_HOST = 'db.internal.example.com';
+      const { AcctDataSource } = require('../global/database/acct.datasource');
+      expect((AcctDataSource.options as any).host).toBe('db.internal.example.com');
+    });
+
+    it('should parse DB_PORT as an integer when set', () => {
+      process.env.DB_PORT = '6543';
+      const { AcctDataSource } = require('../global/database/acct.datasource');
+      expect((AcctDataSource.options as any).port).toBe(6543);
+      expect(typeof (AcctDataSource.options as any).port).toBe('number');
+    });
+
+    it('should use DB_USERNAME when set', () => {
+      process.env.DB_USERNAME = 'svc_acct';
+      const { AcctDataSource } = require('../global/database/acct.datasource');
+      expect((AcctDataSource.options as any).username).toBe('svc_acct');
+    });
+
+    it('should use DB_PASSWORD when set', () => {
+      process.env.DB_PASSWORD = 'secret123';
+      const { AcctDataSource } = require('../global/database/acct.datasource');
+      expect((AcctDataSource.options as any).password).toBe('secret123');
+    });
+
+    it('should fall back to default host when DB_HOST is empty string', () => {
+      // رفتار || یعنی رشته خالی هم باعث fallback می‌شود (برخلاف ??)
+      process.env.DB_HOST = '';
+      const { AcctDataSource } = require('../global/database/acct.datasource');
+      expect((AcctDataSource.options as any).host).toBe('localhost');
+    });
+
+    it('should fall back to default port when DB_PORT is empty string', () => {
+      process.env.DB_PORT = '';
+      const { AcctDataSource } = require('../global/database/acct.datasource');
+      expect((AcctDataSource.options as any).port).toBe(5433);
+    });
+
+    it('should produce NaN port when DB_PORT is non-numeric', () => {
+      // نکته: parseInt('abc', 10) === NaN. سرویس هیچ اعتبارسنجی برای این
+      // حالت ندارد؛ این تست رفتار فعلی (بالقوه خطرناک) را مستند می‌کند.
+      process.env.DB_PORT = 'abc';
+      const { AcctDataSource } = require('../global/database/acct.datasource');
+      expect((AcctDataSource.options as any).port).toBeNaN();
+    });
+
+    it('should not override database name even when env vars are set', () => {
+      process.env.DB_HOST = 'custom-host';
+      process.env.DB_PORT = '9999';
+      process.env.DB_USERNAME = 'custom-user';
+      process.env.DB_PASSWORD = 'custom-pass';
+
+      const { AcctDataSource } = require('../global/database/acct.datasource');
+      expect((AcctDataSource.options as any).database).toBe('Accanting_Data');
+    });
+  });
+
+  describe('initialization state', () => {
+    it('should not be initialized automatically on import', () => {
+      const { AcctDataSource } = require('../global/database/acct.datasource');
+      expect(AcctDataSource.isInitialized).toBe(false);
+    });
+  });
+});
+
+
+
+describe('FinancialYearGuard', () => {
+  let guard: FinancialYearGuard;
+  let mockYearRepository: jest.Mocked<Repository<Year>>;
+
+  // ─── helper: یه ExecutionContext mock با query.year دلخواه ──────────────
+  const makeContext = (query: Record<string, any>, requestOverrides: any = {}): ExecutionContext => {
+    const request: any = { query, ...requestOverrides };
+    return {
+      switchToHttp: () => ({
+        getRequest: () => request,
+      }),
+    } as unknown as ExecutionContext;
+  };
+
+  // ─── helper: یه رکورد Year کامل ──────────────────────────────────────────
+  const makeYearRecord = (overrides: Partial<Year> = {}): Year =>
+    ({
+      id: 1,
+      year: 1403,
+      company_id: 1,
+      ...overrides,
+    } as Year);
+
+  beforeEach(() => {
+    mockYearRepository = {
+      findOne: jest.fn(),
+    } as any;
+
+    guard = new FinancialYearGuard(mockYearRepository);
+  });
+
+  afterEach(() => jest.clearAllMocks());
+
+  // ═══════════════════════════════════════════════════════════════════════
+  describe('valid year format', () => {
+    it('should allow access when year exists in database', async () => {
+      const context = makeContext({ year: '1403' });
+      mockYearRepository.findOne.mockResolvedValue(makeYearRecord({ year: 1403 }));
+
+      const result = await guard.canActivate(context);
+
+      expect(result).toBe(true);
+    });
+
+    it('should query repository with parsed integer year', async () => {
+      const context = makeContext({ year: '1403' });
+      mockYearRepository.findOne.mockResolvedValue(makeYearRecord({ year: 1403 }));
+
+      await guard.canActivate(context);
+
+      expect(mockYearRepository.findOne).toHaveBeenCalledWith({
+        where: { year: 1403 },
+      });
+    });
+
+    it('should attach financialYear (string) to the request', async () => {
+      const request: any = { query: { year: '1403' } };
+      const context = {
+        switchToHttp: () => ({ getRequest: () => request }),
+      } as unknown as ExecutionContext;
+      mockYearRepository.findOne.mockResolvedValue(makeYearRecord({ year: 1403 }));
+
+      await guard.canActivate(context);
+
+      expect(request.financialYear).toBe('1403');
+      expect(typeof request.financialYear).toBe('string');
+    });
+
+    it('should attach the full yearRecord to the request', async () => {
+      const request: any = { query: { year: '1403' } };
+      const context = {
+        switchToHttp: () => ({ getRequest: () => request }),
+      } as unknown as ExecutionContext;
+      const record = makeYearRecord({ id: 42, year: 1403, company_id: 7 });
+      mockYearRepository.findOne.mockResolvedValue(record);
+
+      await guard.canActivate(context);
+
+      expect(request.yearRecord).toEqual(record);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  describe('invalid year format', () => {
+    it('should throw BadRequestException for non-4-digit year', async () => {
+      const context = makeContext({ year: '14031' });
+
+      await expect(guard.canActivate(context)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for short year', async () => {
+      const context = makeContext({ year: '140' });
+
+      await expect(guard.canActivate(context)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for non-numeric year', async () => {
+      const context = makeContext({ year: 'abcd' });
+
+      await expect(guard.canActivate(context)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for missing year (undefined)', async () => {
+      const context = makeContext({});
+
+      await expect(guard.canActivate(context)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for empty string year', async () => {
+      const context = makeContext({ year: '' });
+
+      await expect(guard.canActivate(context)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should propagate the underlying assertValidYear message', async () => {
+      const context = makeContext({ year: 'bad' });
+
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        'Invalid financial year: "bad"',
+      );
+    });
+
+    it('should reject year with injection-style characters', async () => {
+      const context = makeContext({ year: "1403'; DROP TABLE--" });
+
+      await expect(guard.canActivate(context)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should not query the repository when format validation fails', async () => {
+      const context = makeContext({ year: 'invalid' });
+
+      await expect(guard.canActivate(context)).rejects.toThrow(BadRequestException);
+      expect(mockYearRepository.findOne).not.toHaveBeenCalled();
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  describe('year not found in database', () => {
+    it('should throw NotFoundException when no matching year record exists', async () => {
+      const context = makeContext({ year: '1399' });
+      mockYearRepository.findOne.mockResolvedValue(null);
+
+      await expect(guard.canActivate(context)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should include the year in the NotFoundException message', async () => {
+      const context = makeContext({ year: '1399' });
+      mockYearRepository.findOne.mockResolvedValue(null);
+
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        'Financial year 1399 not found',
+      );
+    });
+
+    it('should not attach financialYear to request when year is not found', async () => {
+      const request: any = { query: { year: '1399' } };
+      const context = {
+        switchToHttp: () => ({ getRequest: () => request }),
+      } as unknown as ExecutionContext;
+      mockYearRepository.findOne.mockResolvedValue(null);
+
+      await expect(guard.canActivate(context)).rejects.toThrow(NotFoundException);
+      expect(request.financialYear).toBeUndefined();
+      expect(request.yearRecord).toBeUndefined();
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  describe('repository failures', () => {
+    it('should propagate error when findOne throws', async () => {
+      const context = makeContext({ year: '1403' });
+      mockYearRepository.findOne.mockRejectedValue(new Error('Connection lost'));
+
+      await expect(guard.canActivate(context)).rejects.toThrow('Connection lost');
+    });
+
+    it('should not throw BadRequestException/NotFoundException for DB errors', async () => {
+      const context = makeContext({ year: '1403' });
+      mockYearRepository.findOne.mockRejectedValue(new Error('Timeout'));
+
+      await expect(guard.canActivate(context)).rejects.not.toThrow(BadRequestException);
+      await expect(guard.canActivate(context)).rejects.not.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  describe('edge cases', () => {
+    it('should accept year "0000" as valid format (passes regex, looked up in DB)', async () => {
+      // نکته: YEAR_PATTERN فقط ۴ رقم می‌خواهد؛ "0000" را قبول می‌کند
+      const context = makeContext({ year: '0000' });
+      mockYearRepository.findOne.mockResolvedValue(null);
+
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        'Financial year 0000 not found',
+      );
+      expect(mockYearRepository.findOne).toHaveBeenCalledWith({
+        where: { year: 0 },
+      });
+    });
+
+    it('should trim whitespace before validating (per assertValidYear)', async () => {
+      const context = makeContext({ year: '  1403  ' });
+      mockYearRepository.findOne.mockResolvedValue(makeYearRecord({ year: 1403 }));
+
+      const result = await guard.canActivate(context);
+
+      expect(result).toBe(true);
+    });
+
+    it('should handle year passed as a number instead of string', async () => {
+      const context = makeContext({ year: 1403 as any });
+      mockYearRepository.findOne.mockResolvedValue(makeYearRecord({ year: 1403 }));
+
+      const result = await guard.canActivate(context);
+
+      expect(result).toBe(true);
+      expect(mockYearRepository.findOne).toHaveBeenCalledWith({
+        where: { year: 1403 },
       });
     });
   });
