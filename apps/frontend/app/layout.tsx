@@ -1,8 +1,11 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { Vazirmatn } from "next/font/google";
+import { Vazirmatn, Geist } from "next/font/google";
 import { ThemeProvider } from "@/app/contexts/ThemeContext";
 import { ThemeScript } from "@/app/components/ThemeScript";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const vazirmatn = Vazirmatn({
   subsets: ["arabic"],
@@ -22,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fa" dir="rtl" className={vazirmatn.variable} suppressHydrationWarning>
+    <html lang="fa" dir="rtl" className={cn("font-sans", geist.variable)} suppressHydrationWarning>
       <head>
         <ThemeScript />
       </head>

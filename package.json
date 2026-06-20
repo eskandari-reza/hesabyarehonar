@@ -7,6 +7,12 @@
     "dev": "pnpm -r --parallel run dev",
     "build": "pnpm -r run build"
   },
+  "pnpm": {
+    "overrides": {
+      "glob@<10.0.0": ">=10.5.0",
+      "inflight@<2.0.0": ">=2.0.0"
+    }
+  },
   "devDependencies": {
     "typescript": "^5"
   },
